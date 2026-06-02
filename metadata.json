@@ -1,0 +1,6 @@
+{
+  "name": "Ikatan Profesional & Pensiunan Indonesia",
+  "description": "Website resmi organisasi Ikatan Profesional & Pensiunan Indonesia (IPPI) untuk pensiunan profesional berbagi kontribusi dan keahlian.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
