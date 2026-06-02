@@ -94,10 +94,17 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
   const [editFokusUrutan, setEditFokusUrutan] = useState<number | ''>('');
 
   useEffect(() => {
-    setConfig(getStoredConfig());
-    setMembers(getStoredMembers());
-    setVisitors(getStoredVisitors());
-    setHomeContent(getStoredContent());
+    const handleReload = () => {
+      setConfig(getStoredConfig());
+      setMembers(getStoredMembers());
+      setVisitors(getStoredVisitors());
+      setHomeContent(getStoredContent());
+    };
+    handleReload();
+    window.addEventListener('ippi_storage_updated', handleReload);
+    return () => {
+      window.removeEventListener('ippi_storage_updated', handleReload);
+    };
   }, []);
 
   const triggerFeedback = (status: 'ok' | 'error', msg: string) => {

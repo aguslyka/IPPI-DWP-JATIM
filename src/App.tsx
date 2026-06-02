@@ -91,6 +91,32 @@ export default function App() {
     }
   }, []);
 
+  // Listen for backend real-time Firestore synchronization push events
+  useEffect(() => {
+    const handleStorageUpdate = () => {
+      setOrgConfig(getStoredConfig());
+      setHomeContent(getStoredContent());
+
+      const sessionUser = sessionStorage.getItem('ippi_active_user');
+      if (sessionUser) {
+        try {
+          const parsed = JSON.parse(sessionUser);
+          const fresh = getStoredMembers().find(m => m.id === parsed.id);
+          if (fresh) {
+            setCurrentUser(fresh);
+            sessionStorage.setItem('ippi_active_user', JSON.stringify(fresh));
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    };
+    window.addEventListener('ippi_storage_updated', handleStorageUpdate);
+    return () => {
+      window.removeEventListener('ippi_storage_updated', handleStorageUpdate);
+    };
+  }, []);
+
   useEffect(() => {
     if (orgConfig.logoUrl) {
       let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");

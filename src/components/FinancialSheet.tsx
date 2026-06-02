@@ -28,8 +28,15 @@ export default function FinancialSheet({ currentRole }: FinancialSheetProps) {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    setTxs(getStoredTransactions());
-    setMembers(getStoredMembers());
+    const handleReload = () => {
+      setTxs(getStoredTransactions());
+      setMembers(getStoredMembers());
+    };
+    handleReload();
+    window.addEventListener('ippi_storage_updated', handleReload);
+    return () => {
+      window.removeEventListener('ippi_storage_updated', handleReload);
+    };
   }, []);
 
   // Sync member lookup when typing member id

@@ -399,6 +399,145 @@ const INITIAL_VISITORS: VisitorLog[] = [
   }
 ];
 
+import { db, handleFirestoreError, OperationType } from './firebase';
+import { collection, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
+
+// Callback listener pattern for reactive user interfaces
+type StorageUpdateCallback = () => void;
+let updateListeners: StorageUpdateCallback[] = [];
+
+export function onStorageUpdate(listener: StorageUpdateCallback): () => void {
+  updateListeners.push(listener);
+  return () => {
+    updateListeners = updateListeners.filter(l => l !== listener);
+  };
+}
+
+function notifyListeners() {
+  updateListeners.forEach(listener => {
+    try {
+      listener();
+    } catch (e) {
+      console.error('Error triggering storage listener:', e);
+    }
+  });
+  window.dispatchEvent(new Event('ippi_storage_updated'));
+}
+
+let syncStarted = false;
+
+export function initializeFirestoreSync() {
+  if (syncStarted) return;
+  syncStarted = true;
+
+  // 1. Members Sync
+  onSnapshot(collection(db, 'members'), async (snapshot) => {
+    if (snapshot.empty) {
+      try {
+        for (const m of INITIAL_MEMBERS) {
+          await setDoc(doc(db, 'members', m.id), m);
+        }
+      } catch (error) {
+        handleFirestoreError(error, OperationType.WRITE, 'members');
+      }
+    } else {
+      const list: Member[] = [];
+      snapshot.forEach((doc) => {
+        list.push(doc.data() as Member);
+      });
+      localStorage.setItem('ippi_members', JSON.stringify(list));
+      notifyListeners();
+    }
+  }, (error) => {
+    handleFirestoreError(error, OperationType.GET, 'members');
+  });
+
+  // 2. Config Sync
+  onSnapshot(doc(db, 'config', 'main'), async (snapshot) => {
+    if (!snapshot.exists()) {
+      try {
+        await setDoc(doc(db, 'config', 'main'), INITIAL_CONFIG);
+      } catch (error) {
+        handleFirestoreError(error, OperationType.WRITE, 'config/main');
+      }
+    } else {
+      const config = snapshot.data() as OrgConfig;
+      localStorage.setItem('ippi_config', JSON.stringify(config));
+      notifyListeners();
+    }
+  }, (error) => {
+    handleFirestoreError(error, OperationType.GET, 'config/main');
+  });
+
+  // 3. Content Sync
+  onSnapshot(doc(db, 'content', 'main'), async (snapshot) => {
+    if (!snapshot.exists()) {
+      try {
+        await setDoc(doc(db, 'content', 'main'), INITIAL_CONTENT);
+      } catch (error) {
+        handleFirestoreError(error, OperationType.WRITE, 'content/main');
+      }
+    } else {
+      const content = snapshot.data() as HomepageContent;
+      localStorage.setItem('ippi_content', JSON.stringify(content));
+      notifyListeners();
+    }
+  }, (error) => {
+    handleFirestoreError(error, OperationType.GET, 'content/main');
+  });
+
+  // 4. Transactions Sync
+  onSnapshot(collection(db, 'transactions'), async (snapshot) => {
+    if (snapshot.empty) {
+      try {
+        for (const tx of INITIAL_TRANSACTIONS) {
+          await setDoc(doc(db, 'transactions', tx.id), tx);
+        }
+      } catch (error) {
+        handleFirestoreError(error, OperationType.WRITE, 'transactions');
+      }
+    } else {
+      const list: FinancialTransaction[] = [];
+      snapshot.forEach((doc) => {
+        list.push(doc.data() as FinancialTransaction);
+      });
+      list.sort((a, b) => a.no - b.no);
+      localStorage.setItem('ippi_transactions', JSON.stringify(list));
+      notifyListeners();
+    }
+  }, (error) => {
+    handleFirestoreError(error, OperationType.GET, 'transactions');
+  });
+
+  // 5. Visitors Sync
+  onSnapshot(collection(db, 'visitors'), async (snapshot) => {
+    if (snapshot.empty) {
+      try {
+        for (const v of INITIAL_VISITORS) {
+          await setDoc(doc(db, 'visitors', v.id), v);
+        }
+      } catch (error) {
+        handleFirestoreError(error, OperationType.WRITE, 'visitors');
+      }
+    } else {
+      const list: VisitorLog[] = [];
+      snapshot.forEach((doc) => {
+        list.push(doc.data() as VisitorLog);
+      });
+      list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      localStorage.setItem('ippi_visitors', JSON.stringify(list));
+      notifyListeners();
+    }
+  }, (error) => {
+    handleFirestoreError(error, OperationType.GET, 'visitors');
+  });
+}
+
+// Automatically bind listeners on module load after short delay
+setTimeout(() => {
+  initializeFirestoreSync();
+}, 100);
+
 export function getStoredMembers(): Member[] {
   const data = localStorage.getItem('ippi_members');
   if (!data) {
@@ -409,7 +548,23 @@ export function getStoredMembers(): Member[] {
 }
 
 export function saveStoredMembers(members: Member[]) {
+  const currentLocal = JSON.parse(localStorage.getItem('ippi_members') || '[]');
+  const incomingIds = new Set(members.map(m => m.id));
+  const deletedIds = currentLocal.filter((m: any) => m && m.id && !incomingIds.has(m.id)).map((m: any) => m.id);
+
   localStorage.setItem('ippi_members', JSON.stringify(members));
+  
+  members.forEach((m) => {
+    setDoc(doc(db, 'members', m.id), m).catch(err => {
+      handleFirestoreError(err, OperationType.WRITE, `members/${m.id}`);
+    });
+  });
+
+  deletedIds.forEach((id: string) => {
+    deleteDoc(doc(db, 'members', id)).catch(err => {
+      handleFirestoreError(err, OperationType.DELETE, `members/${id}`);
+    });
+  });
 }
 
 export function getStoredConfig(): OrgConfig {
@@ -428,6 +583,9 @@ export function getStoredConfig(): OrgConfig {
 
 export function saveStoredConfig(config: OrgConfig) {
   localStorage.setItem('ippi_config', JSON.stringify(config));
+  setDoc(doc(db, 'config', 'main'), config).catch(err => {
+    handleFirestoreError(err, OperationType.WRITE, 'config/main');
+  });
 }
 
 export function getStoredContent(): HomepageContent {
@@ -474,6 +632,9 @@ export function getStoredContent(): HomepageContent {
 
 export function saveStoredContent(content: HomepageContent) {
   localStorage.setItem('ippi_content', JSON.stringify(content));
+  setDoc(doc(db, 'content', 'main'), content).catch(err => {
+    handleFirestoreError(err, OperationType.WRITE, 'content/main');
+  });
 }
 
 export function getStoredTransactions(): FinancialTransaction[] {
@@ -486,7 +647,23 @@ export function getStoredTransactions(): FinancialTransaction[] {
 }
 
 export function saveStoredTransactions(txs: FinancialTransaction[]) {
+  const currentLocal = JSON.parse(localStorage.getItem('ippi_transactions') || '[]');
+  const incomingIds = new Set(txs.map(t => t.id));
+  const deletedIds = currentLocal.filter((t: any) => t && t.id && !incomingIds.has(t.id)).map((t: any) => t.id);
+
   localStorage.setItem('ippi_transactions', JSON.stringify(txs));
+
+  txs.forEach((tx) => {
+    setDoc(doc(db, 'transactions', tx.id), tx).catch(err => {
+      handleFirestoreError(err, OperationType.WRITE, `transactions/${tx.id}`);
+    });
+  });
+
+  deletedIds.forEach((id: string) => {
+    deleteDoc(doc(db, 'transactions', id)).catch(err => {
+      handleFirestoreError(err, OperationType.DELETE, `transactions/${id}`);
+    });
+  });
 }
 
 export function getStoredVisitors(): VisitorLog[] {
@@ -499,7 +676,23 @@ export function getStoredVisitors(): VisitorLog[] {
 }
 
 export function saveStoredVisitors(logs: VisitorLog[]) {
+  const currentLocal = JSON.parse(localStorage.getItem('ippi_visitors') || '[]');
+  const incomingIds = new Set(logs.map(l => l.id));
+  const deletedIds = currentLocal.filter((l: any) => l && l.id && !incomingIds.has(l.id)).map((l: any) => l.id);
+
   localStorage.setItem('ippi_visitors', JSON.stringify(logs));
+
+  logs.forEach((log) => {
+    setDoc(doc(db, 'visitors', log.id), log).catch(err => {
+      handleFirestoreError(err, OperationType.WRITE, `visitors/${log.id}`);
+    });
+  });
+
+  deletedIds.forEach((id: string) => {
+    deleteDoc(doc(db, 'visitors', id)).catch(err => {
+      handleFirestoreError(err, OperationType.DELETE, `visitors/${id}`);
+    });
+  });
 }
 
 export function logVisitorAction(nama: string, email: string, role: UserRole, action: 'LOGIN' | 'LOGOUT') {
@@ -515,3 +708,4 @@ export function logVisitorAction(nama: string, email: string, role: UserRole, ac
   logs.unshift(newLog); // Put latest on top
   saveStoredVisitors(logs);
 }
+

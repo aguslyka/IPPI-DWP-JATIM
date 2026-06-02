@@ -66,8 +66,15 @@ export default function SecretaryPanel({ config, onContentChange }: SecretaryPan
   const [editFokusUrutan, setEditFokusUrutan] = useState<number | ''>('');
 
   useEffect(() => {
-    setContent(getStoredContent());
-    setMembers(getStoredMembers());
+    const handleReload = () => {
+      setContent(getStoredContent());
+      setMembers(getStoredMembers());
+    };
+    handleReload();
+    window.addEventListener('ippi_storage_updated', handleReload);
+    return () => {
+      window.removeEventListener('ippi_storage_updated', handleReload);
+    };
   }, []);
 
   const handleAddStruktur = () => {

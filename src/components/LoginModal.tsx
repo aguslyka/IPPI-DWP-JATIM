@@ -209,60 +209,6 @@ export default function LoginModal({ onLoginSuccess, onClose, onRegisterClick }:
               </button>
             </div>
 
-            {/* PRESET ROLES ACCESSIBILITY FOR TESTING ACCORDING TO USER FLOW */}
-            <div className="bg-[#F4F1EA] rounded-2xl p-4 border border-[#E5E0D5] text-left">
-              <span className="text-[9px] uppercase tracking-widest text-[#1B365D] font-extrabold block mb-2 text-center">
-                🛠️ MODUL SIMULASI INSTAN (KLIK & AKSES LANGSUNG)
-              </span>
-              <p className="text-[10px] text-gray-500 text-center mb-3">
-                Klik peran/user simulasi berikut untuk menguji masing-masing hak akses secara instan tanpa perlu registrasi ulang:
-              </p>
-              
-              <div className="grid grid-cols-2 gap-2 text-[11px]">
-                <button
-                  onClick={() => handleFastLogin('admin.ippi@gmail.com', 'admin', UserRole.ADMIN)}
-                  className="bg-white border hover:bg-[#1B365D] hover:text-white p-2 rounded text-left font-semibold text-gray-800 transition-colors cursor-pointer"
-                >
-                  🔑 Login (Admin)
-                </button>
-                <button
-                  onClick={() => handleFastLogin('sekretaris.ippi@gmail.com', 'sekretaris', UserRole.SEKRETARIS)}
-                  className="bg-white border hover:bg-[#1B365D] hover:text-white p-2 rounded text-left font-semibold text-gray-800 transition-colors cursor-pointer"
-                >
-                  📝 Login (Sekretaris)
-                </button>
-                <button
-                  onClick={() => handleFastLogin('bendahara.ippi@gmail.com', 'bendahara', UserRole.BENDAHARA)}
-                  className="bg-white border hover:bg-[#1B365D] hover:text-white p-2 rounded text-left font-semibold text-gray-800 transition-colors cursor-pointer"
-                >
-                  💵 Login (Bendahara)
-                </button>
-                <button
-                  onClick={() => handleFastLogin('ketua.ippi@gmail.com', 'ketua', UserRole.KETUA)}
-                  className="bg-white border hover:bg-[#1B365D] hover:text-white p-2 rounded text-left font-semibold text-gray-800 transition-colors cursor-pointer"
-                >
-                  👔 Login (Ketua)
-                </button>
-              </div>
-
-              <div className="mt-2 text-center">
-                <button
-                  onClick={() => {
-                    // Try to simulate an unapproved login
-                    const members = getStoredMembers();
-                    const unappr = members.find((m) => !m.isApproved);
-                    if (unappr) {
-                      setEmail(unappr.email);
-                      setPassword(unappr.password || '');
-                    }
-                  }}
-                  className="text-[9px] text-[#C5A059] hover:underline font-bold"
-                >
-                  *Hubungkan Simulasi Calon Anggota Belum di-Approve
-                </button>
-              </div>
-            </div>
-
           </div>
         )}
       </div>

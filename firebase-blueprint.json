@@ -1,0 +1,109 @@
+{
+  "entities": {
+    "Member": {
+      "title": "Member",
+      "description": "Information about a retired professional who is registered with IPPI.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "nama": { "type": "string" },
+        "tempatLahir": { "type": "string" },
+        "tanggalLahir": { "type": "string" },
+        "institusiPensiun": { "type": "string" },
+        "jenisKelamin": { "type": "string" },
+        "agama": { "type": "string" },
+        "keahlian": { "type": "string" },
+        "noTelp": { "type": "string" },
+        "email": { "type": "string" },
+        "alamat": { "type": "string" },
+        "password": { "type": "string" },
+        "role": { "type": "string" },
+        "isApproved": { "type": "boolean" },
+        "noAnggota": { "type": "string" },
+        "noRekening": { "type": "string" }
+      },
+      "required": ["id", "nama", "email", "isApproved"]
+    },
+    "OrgConfig": {
+      "title": "OrgConfig",
+      "description": "Central organization branding, letterhead details, and legal verification information.",
+      "type": "object",
+      "properties": {
+        "logoText": { "type": "string" },
+        "logoUrl": { "type": "string" },
+        "namaSekretariat": { "type": "string" },
+        "alamatSekretariat": { "type": "string" },
+        "noIjinPendirian": { "type": "string" },
+        "noTelp": { "type": "string" },
+        "email": { "type": "string" }
+      },
+      "required": ["logoText", "namaSekretariat", "alamatSekretariat", "noIjinPendirian", "noTelp", "email"]
+    },
+    "FinancialTransaction": {
+      "title": "FinancialTransaction",
+      "description": "Cashbook ledger entry tracking income and operational expenses of IPPI.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "no": { "type": "number" },
+        "tanggal": { "type": "string" },
+        "kategori": { "type": "string" },
+        "sumberTujuan": { "type": "string" },
+        "deskripsi": { "type": "string" },
+        "noRekening": { "type": "string" },
+        "jumlahMasuk": { "type": "number" },
+        "jumlahKeluar": { "type": "number" },
+        "saldoAkhir": { "type": "number" },
+        "memberId": { "type": "string" }
+      },
+      "required": ["id", "no", "tanggal", "kategori", "sumberTujuan", "deskripsi", "noRekening", "jumlahMasuk", "jumlahKeluar", "saldoAkhir"]
+    },
+    "VisitorLog": {
+      "title": "VisitorLog",
+      "description": "Log entry tracking member login and logout activity.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "nama": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string" },
+        "action": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["id", "nama", "email", "role", "action", "timestamp"]
+    },
+    "HomepageDescription": {
+      "title": "HomepageDescription",
+      "description": "Describes dynamic page content and structural groups.",
+      "type": "object",
+      "properties": {
+        "heroTitle": { "type": "string" },
+        "heroSub": { "type": "string" },
+        "heroText": { "type": "string" },
+        "visiMisi": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/members/{memberId}": {
+      "schema": "Member",
+      "description": "List of all IPPI registered seniors, and potential, approved, and suspended members."
+    },
+    "/config/main": {
+      "schema": "OrgConfig",
+      "description": "Global letterhead credentials and organization configuration parameters."
+    },
+    "/content/main": {
+      "schema": "HomepageDescription",
+      "description": "Dynamic landing configurations, vision statements, highlights."
+    },
+    "/transactions/{transactionId}": {
+      "schema": "FinancialTransaction",
+      "description": "Double-entry books and general ledger history for cash audit."
+    },
+    "/visitors/{visitorLogId}": {
+      "schema": "VisitorLog",
+      "description": "System access audit trail of active logins showing active roles."
+    }
+  }
+}
