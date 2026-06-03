@@ -5,6 +5,7 @@ import RegistrationForm from './components/RegistrationForm';
 import LoginModal from './components/LoginModal';
 import MemberCard from './components/MemberCard';
 import FinancialSheet from './components/FinancialSheet';
+import MemberFinanceInfo from './components/MemberFinanceInfo';
 import AdminPanel from './components/AdminPanel';
 import SecretaryPanel from './components/SecretaryPanel';
 import KopSurat from './components/KopSurat';
@@ -49,6 +50,7 @@ export default function App() {
   // Session states
   const [currentUser, setCurrentUser] = useState<Member | null>(null);
   const [currentRole, setCurrentRole] = useState<UserRole | null>(null);
+  const [registeredCount, setRegisteredCount] = useState<number>(getStoredMembers().length);
 
   // Elder accessibility font zoom
   const [fontScale, setFontScale] = useState<'standard' | 'large' | 'xl'>('standard');
@@ -96,6 +98,7 @@ export default function App() {
     const handleStorageUpdate = () => {
       setOrgConfig(getStoredConfig());
       setHomeContent(getStoredContent());
+      setRegisteredCount(getStoredMembers().length);
 
       const sessionUser = sessionStorage.getItem('ippi_active_user');
       if (sessionUser) {
@@ -258,7 +261,7 @@ export default function App() {
         <div className="flex items-center space-x-1 sm:space-x-2">
           <span className="inline-flex max-sm:hidden w-2 h-2 bg-emerald-400 rounded-full animate-bounce"></span>
           <span className="font-serif italic text-[11px] sm:text-xs">
-            Selamat Datang di Portal Ikatan Profesional & Pensiunan Indonesia | Izin Kemenkumham: AHU-0012411
+            Selamat Datang di Portal Ikatan Profesional & Pensiunan Indonesia | Ijin Kemenkumham : AHU Kemenkum-0010333.AH.01.07.Tahun 2025 (13-01-2026)
           </span>
         </div>
 
@@ -477,7 +480,7 @@ export default function App() {
                         onClick={() => setIsRegisterOpen(true)}
                         className="px-6 py-4 border-2 border-[#1B365D] hover:bg-[#F4F1EA] text-[#1B365D] text-base font-bold rounded-xl transition-colors cursor-pointer"
                       >
-                        Gabung Pengurus IPPI
+                        Gabung Anggota IPPI
                       </button>
                     </div>
                   </div>
@@ -493,14 +496,12 @@ export default function App() {
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-[#E5E0D5]">
+                    <div className="pt-4 border-t border-[#E5E0D5]">
                       <div>
-                        <span className="block text-4xl font-serif font-black text-[#1B365D]">1.240+</span>
-                        <span className="text-[9px] uppercase tracking-wider text-[#8B7E66] font-extrabold block mt-1">Pensiunan Terdaftar</span>
-                      </div>
-                      <div>
-                        <span className="block text-4xl font-serif font-black text-[#1B365D]">45+</span>
-                        <span className="text-[9px] uppercase tracking-wider text-[#8B7E66] font-extrabold block mt-1">Keahlian Sektoral</span>
+                        <span className="block text-4xl font-serif font-black text-[#1B365D]">
+                          {`222${registeredCount}`} Orang
+                        </span>
+                        <span className="text-[9px] uppercase tracking-wider text-[#8B7E66] font-extrabold block mt-1">Pensiunan Terdaftar (Real-Time)</span>
                       </div>
                     </div>
 
@@ -511,6 +512,17 @@ export default function App() {
                         Terus pupuk sisa energi Anda demi melobi pembangunan bangsa, melatih pemuda, dan membagikan pencerahan kearifan.
                       </p>
                     </div>
+
+                    {/* DPW IPPI Jawa Timur Bank Account Box */}
+                    {(orgConfig.noRekeningIppiBaris1 || orgConfig.noRekeningIppiBaris2) && (
+                      <div className="bg-[#1B365D]/5 border-l-4 border-[#1B365D] p-4 rounded-xl space-y-1 text-left">
+                        <span className="text-[10px] uppercase tracking-widest text-[#1B365D] font-extrabold block">💳 REKENING DPW IPPI JATIM</span>
+                        <div className="text-[11px] text-gray-800 leading-normal font-mono font-bold mt-0.5">
+                          {orgConfig.noRekeningIppiBaris1 && <p>{orgConfig.noRekeningIppiBaris1}</p>}
+                          {orgConfig.noRekeningIppiBaris2 && <p>{orgConfig.noRekeningIppiBaris2}</p>}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                 </div>
@@ -1092,11 +1104,43 @@ export default function App() {
                 {/* ROLE-SPECIFIC SCREEN GENERATOR */}
                 
                 {/* 1. ANGGOTA VIEW (KARTU & EDIT PROFIL MANDIRI) */}
-                {currentRole === UserRole.ANGGOTA && (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                {currentRole === UserRole.ANGGOTA && currentUser && (
+                  <div className="space-y-10">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                     {/* ID Card Display */}
-                    <div className="lg:col-span-1">
+                    <div className="lg:col-span-1 space-y-6">
                       <MemberCard member={currentUser} config={orgConfig} />
+
+                      {/* DPW IPPI Jawa Timur Official Bank Account details for members */}
+                      {(orgConfig.noRekeningIppiBaris1 || orgConfig.noRekeningIppiBaris2) && (
+                        <div className="bg-[#1B365D]/5 border border-[#1B365D]/10 rounded-2xl p-5 text-left space-y-3 relative overflow-hidden">
+                          <div className="absolute top-0 right-0 w-16 h-16 bg-[#C5A059]/5 rounded-bl-full pointer-events-none" />
+                          <h4 className="text-xs font-bold text-[#1B365D] uppercase tracking-wider flex items-center space-x-2">
+                            <span>💳 REKENING RESMI DPW IPPI JAWA TIMUR</span>
+                          </h4>
+                          <p className="text-[11px] text-[#5D574F] leading-relaxed">
+                            Bapak/Ibu dapat mempergunakan info rujukan rekening resmi berikut ini untuk keperluan iuran anggota atau sumbangan dana sosial organisasi:
+                          </p>
+                          <div className="bg-white border border-[#E5E0D5] p-4 rounded-xl space-y-2 font-mono text-xs shadow-xs">
+                            {orgConfig.noRekeningIppiBaris1 && (
+                              <div className="flex justify-between items-start border-b border-gray-100 pb-2 last:border-0 last:pb-0 font-bold">
+                                <div>
+                                  <span className="block text-[9px] uppercase text-gray-400 font-sans tracking-wide">Baris 1</span>
+                                  <span className="font-semibold text-gray-800">{orgConfig.noRekeningIppiBaris1}</span>
+                                </div>
+                              </div>
+                            )}
+                            {orgConfig.noRekeningIppiBaris2 && (
+                              <div className="flex justify-between items-start pt-1 font-bold">
+                                <div>
+                                  <span className="block text-[9px] uppercase text-gray-400 font-sans tracking-wide">Baris 2</span>
+                                  <span className="font-semibold text-gray-800">{orgConfig.noRekeningIppiBaris2}</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Profile Editing form (Only allows editing: No Telp, Email, Alamat) */}
@@ -1181,7 +1225,12 @@ export default function App() {
                       </form>
                     </div>
                   </div>
-                )}
+
+                  <div className="border-t border-[#E5E0D5] pt-10">
+                    <MemberFinanceInfo member={currentUser} />
+                  </div>
+                </div>
+              )}
 
                 {/* 2. ADMIN ROLE DYNAMIC SHEETS & ACCUMULATOR ACCESS */}
                 {currentRole === UserRole.ADMIN && (
@@ -1216,6 +1265,7 @@ export default function App() {
                   <SecretaryPanel
                     config={orgConfig}
                     onContentChange={(newContent) => setHomeContent(newContent)}
+                    onConfigChange={(newConfig) => setOrgConfig(newConfig)}
                   />
                 )}
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { HomepageContent, Member, OrgConfig } from '../types';
-import { getStoredContent, saveStoredContent, getStoredMembers, saveStoredMembers } from '../utils/storage';
+import { getStoredContent, saveStoredContent, getStoredMembers, saveStoredMembers, saveStoredConfig } from '../utils/storage';
 import { Edit, Save, Plus, Trash2, CheckCircle2, MessageSquare, PhoneCall, Printer } from 'lucide-react';
 import KopSurat from './KopSurat';
 import AboutEditor from './editors/AboutEditor';
@@ -11,11 +11,17 @@ import JurnalEditor from './editors/JurnalEditor';
 interface SecretaryPanelProps {
   config: OrgConfig;
   onContentChange: (newContent: HomepageContent) => void;
+  onConfigChange?: (newConfig: OrgConfig) => void;
 }
 
-export default function SecretaryPanel({ config, onContentChange }: SecretaryPanelProps) {
+export default function SecretaryPanel({ config, onContentChange, onConfigChange }: SecretaryPanelProps) {
   const [content, setContent] = useState<HomepageContent | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
+  const [localConfig, setLocalConfig] = useState<OrgConfig>(config);
+
+  useEffect(() => {
+    setLocalConfig(config);
+  }, [config]);
 
   // Subtab choice
   const [activeSubTab, setActiveSubTab] = useState<'EDIT_HOME' | 'APPROVALS' | 'KOP' | 'TENTANG_KAMI' | 'PROG_KERJA' | 'BERITA' | 'JURNAL' | 'FOKUS_KONTRIBUSI'>('EDIT_HOME');
@@ -366,7 +372,9 @@ export default function SecretaryPanel({ config, onContentChange }: SecretaryPan
     if (!content) return;
     saveStoredContent(content);
     onContentChange(content);
-    setFeedback('Sukses: Teks & Layout halaman beranda website berhasil diperbarui!');
+    saveStoredConfig(localConfig);
+    if (onConfigChange) onConfigChange(localConfig);
+    setFeedback('Sukses: Teks, Layout, dan Rekening Resmi halaman beranda website berhasil diperbarui!');
     setTimeout(() => setFeedback(null), 4000);
   };
 
@@ -569,6 +577,42 @@ export default function SecretaryPanel({ config, onContentChange }: SecretaryPan
               className="w-full bg-white border border-[#E5E0D5] rounded-lg px-4 py-2.5 text-xs italic focus:ring-1 focus:ring-[#1B365D]"
               required
             />
+          </div>
+
+          {/* Tambahan Input Rekening DPW IPPI Jawa Timur (2 Baris) */}
+          <div className="bg-[#1B365D]/5 border border-[#1B365D]/10 rounded-xl p-5 space-y-4">
+            <h4 className="text-xs font-bold text-[#1B365D] uppercase tracking-wider flex items-center space-x-1.5">
+              <span>💳 Rekening Resmi DPW IPPI Jawa Timur (2 Baris)</span>
+            </h4>
+            <p className="text-[11px] text-[#5D574F]">
+              Sebagai sekretaris, Anda dapat memperbarui informasi rekening yang tampil secara dinamis di halaman depan (beranda) dan di portal akses anggota di bawah ini:
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-[#5D574F] uppercase mb-2">
+                  No Rekening Baris 1
+                </label>
+                <input
+                  type="text"
+                  value={localConfig.noRekeningIppiBaris1 || ''}
+                  onChange={(e) => setLocalConfig({ ...localConfig, noRekeningIppiBaris1: e.target.value })}
+                  placeholder="Contoh: Bank Jatim Rek: 1023048999"
+                  className="w-full bg-white border border-[#E5E0D5] rounded-lg px-4 py-2.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#5D574F] uppercase mb-2">
+                  No Rekening Baris 2
+                </label>
+                <input
+                  type="text"
+                  value={localConfig.noRekeningIppiBaris2 || ''}
+                  onChange={(e) => setLocalConfig({ ...localConfig, noRekeningIppiBaris2: e.target.value })}
+                  placeholder="Contoh: a.n. DPW IPPI JAWA TIMUR"
+                  className="w-full bg-white border border-[#E5E0D5] rounded-lg px-4 py-2.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Bullet points editor */}

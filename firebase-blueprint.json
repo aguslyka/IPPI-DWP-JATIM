@@ -35,7 +35,9 @@
         "alamatSekretariat": { "type": "string" },
         "noIjinPendirian": { "type": "string" },
         "noTelp": { "type": "string" },
-        "email": { "type": "string" }
+        "email": { "type": "string" },
+        "noRekeningIppiBaris1": { "type": "string" },
+        "noRekeningIppiBaris2": { "type": "string" }
       },
       "required": ["logoText", "namaSekretariat", "alamatSekretariat", "noIjinPendirian", "noTelp", "email"]
     },

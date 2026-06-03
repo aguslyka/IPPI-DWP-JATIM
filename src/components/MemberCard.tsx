@@ -27,46 +27,64 @@ export default function MemberCard({ member, config }: MemberCardProps) {
           <title>Cetak Kartu Anggota IPPI - ${member.nama}</title>
           <style>
             @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;600;700&display=swap');
+            @page {
+              size: portrait;
+              margin: 15mm 10mm 15mm 10mm;
+            }
+            * {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+              color-adjust: exact !important;
+              box-sizing: border-box;
+            }
             body {
               font-family: 'Inter', sans-serif;
               background-color: #ffffff;
               display: flex;
               flex-direction: column;
               align-items: center;
-              padding: 40px;
+              padding: 20px;
+              margin: 0;
             }
             .card-container {
               display: flex;
-              gap: 40px;
+              flex-direction: column;
+              align-items: center;
+              gap: 30px;
               margin-top: 20px;
             }
             .card-side {
               width: 350px;
               height: 220px;
               border-radius: 16px;
-              background-color: #1B365D;
-              color: white;
+              color: white !important;
               padding: 20px;
-              box-sizing: border-box;
               display: flex;
               flex-direction: column;
               justify-content: space-between;
-              border: 3px solid #C5A059;
+              border: 2px solid #C5A059 !important;
               position: relative;
               font-size: 12px;
-              box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+              box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+              overflow: hidden;
+            }
+            .card-side.front {
+              background: linear-gradient(135deg, #0F233C 0%, #1B365D 50%, #2B4E7A 100%) !important;
+            }
+            .card-side.back {
+              background: #0F2038 !important;
             }
             .header {
               display: flex;
               align-items: center;
-              border-bottom: 1px solid rgba(197, 160, 89, 0.3);
+              border-bottom: 1px solid rgba(197, 160, 89, 0.3) !important;
               padding-bottom: 8px;
             }
             .logo {
               width: 36px;
               height: 36px;
-              background-color: white;
-              color: #1B365D;
+              background-color: white !important;
+              color: #1B365D !important;
               border-radius: 50%;
               display: flex;
               align-items: center;
@@ -74,25 +92,26 @@ export default function MemberCard({ member, config }: MemberCardProps) {
               font-weight: bold;
               font-family: 'Cinzel', serif;
               font-size: 14px;
-              border: 1px solid #C5A059;
+              border: 1px solid #C5A059 !important;
               margin-right: 12px;
               overflow: hidden;
             }
             .title-group {
-              line-height: 1.2;
+              line-height: 1.25;
+              text-align: left;
             }
             .title {
               font-family: 'Cinzel', serif;
               font-weight: 700;
-              font-size: 12px;
-              color: #C5A059;
+              font-size: 10px;
+              color: #C5A059 !important;
               letter-spacing: 0.5px;
             }
             .subtitle {
-              font-size: 8px;
+              font-size: 6px;
               opacity: 0.8;
               text-transform: uppercase;
-              letter-spacing: 1.5px;
+              letter-spacing: 1.2px;
             }
             .body-front {
               margin-top: 15px;
@@ -100,35 +119,39 @@ export default function MemberCard({ member, config }: MemberCardProps) {
               display: flex;
               flex-direction: column;
               justify-content: center;
+              text-align: left;
             }
             .id-label {
               font-size: 8px;
               text-transform: uppercase;
               letter-spacing: 1px;
-              color: #C5A059;
+              color: #C5A059 !important;
               margin-bottom: 2px;
+              font-weight: bold;
             }
             .member-name {
               font-family: 'Cinzel', serif;
-              font-size: 15px;
+              font-size: 14px;
               font-weight: bold;
               margin-bottom: 4px;
               white-space: nowrap;
               overflow: hidden;
               text-overflow: ellipsis;
+              color: #ffffff !important;
             }
             .member-id {
               font-family: monospace;
               font-size: 14px;
               font-weight: bold;
               letter-spacing: 1px;
+              color: #F4F1EA !important;
             }
             .footer-front {
               display: flex;
               justify-content: space-between;
               font-size: 8px;
-              opacity: 0.8;
-              border-top: 1px solid rgba(255,255,255,0.1);
+              opacity: 0.9;
+              border-top: 1px solid rgba(255,255,255,0.1) !important;
               padding-top: 6px;
             }
             .back-body {
@@ -142,12 +165,12 @@ export default function MemberCard({ member, config }: MemberCardProps) {
               font-size: 10px;
               line-height: 1.4;
               margin: 15px 0;
-              color: #F4F1EA;
+              color: #F4F1EA !important;
             }
             .back-notice {
               font-size: 8px;
               opacity: 0.7;
-              border-top: 1px solid rgba(255,255,255,0.1);
+              border-top: 1px solid rgba(255,255,255,0.1) !important;
               padding-top: 8px;
               margin-top: auto;
             }
@@ -160,20 +183,22 @@ export default function MemberCard({ member, config }: MemberCardProps) {
           </style>
         </head>
         <body>
-          <h2 class="no-print">Cetak Kartu Anggota IPPI</h2>
-          <p class="no-print">Gunakan perintah print browser atau klik tombol untuk menyimpan sebagai PDF fisik.</p>
-          <button class="no-print" onclick="window.print()" style="margin-bottom: 20px; padding: 10px 20px; background-color: #1B365D; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold;">Cetak Sekarang</button>
+          <h2 class="no-print" style="color: #1B365D; font-family: 'Cinzel', serif; font-size: 18px; margin-bottom: 5px; text-align: center;">Cetak Kartu Anggota IPPI</h2>
+          <p class="no-print" style="font-size: 11px; color: #5D574F; margin-bottom: 15px; text-align: center; max-width: 450px; line-height: 1.4;">
+            Silakan klik tombol di bawah untuk mencetak atau menyimpan sebagai PDF. Pastikan pilihan <strong>"Gambar Latar Belakang / Background Graphics"</strong> dicentang pada dialog cetak browsermu agar warna kartu muncul sempurna.
+          </p>
+          <button class="no-print" onclick="window.print()" style="margin-bottom: 25px; padding: 10px 24px; background-color: #1B365D; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">Cetak / Simpan PDF</button>
           
           <div class="card-container">
             <!-- Front -->
-            <div class="card-side">
+            <div class="card-side front">
               <div class="header">
                 <div class="logo">
                   ${config.logoUrl ? `<img src="${config.logoUrl}" style="width:100%;height:100%;object-fit:cover;" />` : config.logoText}
                 </div>
                 <div class="title-group">
                   <div class="title">IKATAN PROFESIONAL & PENSIUNAN INDONESIA</div>
-                  <div class="subtitle">DPP IPPI REPUBLIK INDONESIA</div>
+                  <div class="subtitle">DPP REPUBLIK INDONESIA</div>
                 </div>
               </div>
               <div class="body-front">
@@ -184,29 +209,37 @@ export default function MemberCard({ member, config }: MemberCardProps) {
               </div>
               <div class="footer-front">
                 <span>REKENING IKATAN: ${displayNoRekening}</span>
-                <span style="font-weight: bold; color: #C5A059;">KARTU ANGGOTA AKTIF</span>
+                <span style="font-weight: bold; color: #C5A059 !important;">KARTU ANGGOTA AKTIF</span>
               </div>
             </div>
 
             <!-- Back -->
-            <div class="card-side">
-              <div class="back-body">
-                <div class="header" style="justify-content: center; border-bottom: 1px solid rgba(197, 160, 89, 0.3); padding-bottom: 8px;">
-                  <div class="logo" style="margin-right: 8px;">
+            <div class="card-side back">
+              <div class="back-body" style="height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
+                <div class="header" style="justify-content: flex-start; border-bottom: 1px solid rgba(197, 160, 89, 0.3) !important; padding-bottom: 6px;">
+                  <div class="logo" style="margin-right: 8px; width: 32px; height: 32px; overflow: hidden; flex-shrink: 0; border: 1px solid #C5A059 !important; border-radius: 50%;">
                     ${config.logoUrl ? `<img src="${config.logoUrl}" style="width:100%;height:100%;object-fit:cover;" />` : config.logoText}
                   </div>
-                  <div class="title-group" style="text-align: left;">
-                    <div class="title" style="font-size: 10px;">SEKRETARIAT NASIONAL IPPI</div>
-                    <div class="subtitle" style="font-size: 7px;">Pemberdayaan Profesional Senior</div>
+                  <div class="title-group" style="text-align: left; line-height: 1.15;">
+                    <div class="title" style="font-family: 'Cinzel', serif; font-weight: 700; font-size: 8px; color: #C5A059 !important; letter-spacing: 0.5px;">PENGURUS PUSAT</div>
+                    <div style="font-size: 7px; color: #FFFFFF; font-weight: bold; text-transform: uppercase;">IKATAN PROFESIONAL DAN PENSIUNAN INDONESIA</div>
                   </div>
                 </div>
-                <p class="back-address">
-                  <strong>Kantor Sekretariat:</strong><br>
-                  ${config.alamatSekretariat}
-                </p>
-                <div class="back-notice">
-                  Kartu ini adalah tanda pengenal resmi Anggota IPPI Indonesia. Hak kontribusi terlindungi.<br>
-                  Kementerian Hukum dan HAM RI No: ${config.noIjinPendirian}
+                <div style="text-align: left; font-size: 8px; color: #F4F1EA; margin: 8px 0; line-height: 1.35;">
+                  <p style="margin: 0 0 4px 0;">
+                    <strong style="color: #C5A059 !important;">Alamat Sekretariat PP IPPI:</strong><br>
+                    Jl.Tanah Merdeka VII No.51 B RT.004/06 Kelurahan Kampung Rambutan Kecamatan Ciracas Jakarta Timur
+                  </p>
+                  <p style="margin: 0 0 2px 0;">
+                    <strong>No.Telp:</strong> 081514017944 / 082113094238
+                  </p>
+                  <p style="margin: 0;">
+                    <strong>Email:</strong> ikatanprofesionalpensiunanindo@gmail.com
+                  </p>
+                </div>
+                <div class="back-notice" style="font-size: 7px; border-top: 1px solid rgba(255,255,255,0.1) !important; padding-top: 5px; color: #C5A059 !important; font-weight: bold; line-height: 1.2; text-align: center;">
+                  SK Kemenkumham RI No. Regis Resmi:<br>
+                  <span style="color: #FFFFFF; font-family: monospace; font-size: 7.5px;">AHU Kemenkum-0010333.AH.01.07.Tahun 2025 Tgl 13 Jan. 2026</span>
                 </div>
               </div>
             </div>
@@ -258,7 +291,7 @@ export default function MemberCard({ member, config }: MemberCardProps) {
           className="relative w-full max-w-[380px] h-[230px] rounded-2xl cursor-pointer select-none perspective-1000 transition-all duration-300 transform hover:scale-102"
         >
           {/* Card Wrapper with 3D Flip */}
-          <div className={`relative w-full h-full duration-500 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
+          <div className={`relative w-full h-full transition-transform duration-500 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
             
             {/* FRONT OF THE CARD */}
             <div className="absolute inset-0 w-full h-full rounded-2xl bg-gradient-to-r from-[#0F233C] via-[#1B365D] to-[#2B4E7A] text-white p-5 flex flex-col justify-between border-2 border-[#C5A059] shadow-xl backface-hidden">
@@ -313,25 +346,42 @@ export default function MemberCard({ member, config }: MemberCardProps) {
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(197,160,89,0.06)_0%,transparent_60%)] pointer-events-none rounded-2xl" />
 
               {/* Back Header */}
-              <div className="flex items-center justify-center border-b border-[#C5A059]/20 pb-2 z-10">
-                <span className="font-serif text-xs font-bold text-[#C5A059] uppercase tracking-wider text-center">SYARAT & KETENTUAN KARTU IPPI</span>
+              <div className="flex items-center space-x-2 border-b border-[#C5A059]/20 pb-1.5 z-10">
+                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-[#1B365D] font-serif font-black text-xs border border-[#C5A059] shrink-0 overflow-hidden">
+                  {config.logoUrl ? (
+                    <img src={config.logoUrl} alt="Logo" className="w-full h-full object-cover" />
+                  ) : (
+                    config.logoText
+                  )}
+                </div>
+                <div className="text-left leading-none">
+                  <span className="block font-serif text-[8px] font-bold text-[#C5A059]">PENGURUS PUSAT</span>
+                  <span className="block text-[7px] font-bold text-white tracking-tight uppercase">IKATAN PROFESIONAL DAN PENSIUNAN INDONESIA</span>
+                </div>
               </div>
 
               {/* Back Body */}
-              <div className="my-auto text-center px-2 z-10">
-                <p className="text-[9px] text-[#F4F1EA] leading-relaxed flex items-center justify-center gap-1">
-                  <MapPin className="w-3 h-3 text-[#C5A059] shrink-0" />
-                  <strong>Alamat Sekretariat Resmi:</strong>
-                </p>
-                <p className="text-[9px] text-slate-300 mt-1 line-clamp-3">
-                  {config.alamatSekretariat}
-                </p>
+              <div className="my-auto text-left space-y-1.5 z-10">
+                <div className="text-[8.5px] text-[#F4F1EA] leading-relaxed">
+                  <p className="font-semibold text-[#C5A059] flex items-center gap-1 mb-0.5">
+                    <MapPin className="w-2.5 h-2.5 shrink-0" />
+                    <span>Alamat Sekretariat PP IPPI:</span>
+                  </p>
+                  <p className="text-slate-200 pl-3.5 leading-normal">
+                    Jl.Tanah Merdeka VII No.51 B RT.004/06 Kelurahan Kampung Rambutan Kecamatan Ciracas Jakarta Timur
+                  </p>
+                </div>
+
+                <div className="text-[8.5px] text-[#F4F1EA] pl-3.5 leading-normal space-y-0.5">
+                  <p><strong>No.Telp :</strong> <span className="text-slate-200 font-mono font-bold">081514017944/082113094238</span></p>
+                  <p><strong>Email :</strong> <span className="text-slate-200 font-mono text-[8px]">ikatanprofesionalpensiunanindo@gmail.com</span></p>
+                </div>
               </div>
 
               {/* Back Footer */}
-              <div className="text-[7px] text-slate-400 leading-normal border-t border-white/10 pt-2 text-center z-10 font-sans">
-                <p>Kartu ini diterbitkan oleh Direktorat Jenderal Administrasi Hukum Umum Kemenkumham RI</p>
-                <p className="font-semibold text-white mt-0.5">Izin Terdaftar No: {config.noIjinPendirian}</p>
+              <div className="text-[7px] text-[#C5A059] leading-normal border-t border-white/10 pt-1.5 text-center z-10 font-sans">
+                <p className="opacity-80">Surat Keputusan Menteri Hukum dan HAM RI:</p>
+                <p className="font-bold text-white font-mono mt-0.5 uppercase tracking-wide">AHU Kemenkum-0010333.AH.01.07.Tahun 2025 Tgl 13 Jan. 2026</p>
               </div>
             </div>
 

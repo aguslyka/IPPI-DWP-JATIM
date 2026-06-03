@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FinancialTransaction, TransaksiKategori, SumberDana, Member } from '../types';
-import { getStoredTransactions, saveStoredTransactions, getStoredMembers } from '../utils/storage';
-import { Plus, Download, Printer, Search, Send, FileSpreadsheet, Check } from 'lucide-react';
+import { getStoredTransactions, saveStoredTransactions, getStoredMembers, getStoredConfig } from '../utils/storage';
+import { Plus, Download, Printer, Search, Send, FileSpreadsheet, Check, Edit, Trash2, X } from 'lucide-react';
 
 interface FinancialSheetProps {
   currentRole: string;
@@ -22,10 +22,36 @@ export default function FinancialSheet({ currentRole }: FinancialSheetProps) {
   // Auto-Link member fields
   const [searchMemberId, setSearchMemberId] = useState('');
   const [linkedMember, setLinkedMember] = useState<Member | null>(null);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+
+  // Compute matched members list based on 2+ characters typed
+  const filteredSearchMembers = React.useMemo(() => {
+    const trimmed = searchMemberId.trim().toLowerCase();
+    if (trimmed.length < 2) return [];
+    return members.filter(
+      (m) =>
+        (m.noAnggota && m.noAnggota.toLowerCase().includes(trimmed)) ||
+        (m.id && m.id.toLowerCase().includes(trimmed)) ||
+        (m.nama && m.nama.toLowerCase().includes(trimmed))
+    );
+  }, [searchMemberId, members]);
+
+  const selectMemberFromDropdown = (m: Member) => {
+    setLinkedMember(m);
+    setSearchMemberId(m.noAnggota || m.nama);
+    setShowSearchDropdown(false);
+    setKategori(TransaksiKategori.MASUK);
+    setSumberTujuan(SumberDana.IURAN);
+    setNoRekening(`Bank - Account ${m.noRekening || '9990000110'} a.n. ${m.nama}`);
+    setDeskripsi(`Pembayaran Iuran Anggota: ${m.nama}`);
+  };
 
   // Message template generator target state
   const [whatsappMock, setWhatsappMock] = useState<{ phone: string; text: string } | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  // Edit states for Admin Role
+  const [editingTxId, setEditingTxId] = useState<string | null>(null);
 
   useEffect(() => {
     const handleReload = () => {
@@ -63,7 +89,21 @@ export default function FinancialSheet({ currentRole }: FinancialSheetProps) {
     }
   };
 
-  const handleAddTransaction = (e: React.FormEvent) => {
+  const recomputeBalances = (transactions: FinancialTransaction[]): FinancialTransaction[] => {
+    // Sort chronologically by date so balances sum logically
+    const sorted = [...transactions].sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+    let runningBalance = 0;
+    return sorted.map((t, idx) => {
+      runningBalance += t.jumlahMasuk - t.jumlahKeluar;
+      return {
+        ...t,
+        no: idx + 1,
+        saldoAkhir: runningBalance,
+      };
+    });
+  };
+
+  const handleSaveTransaction = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!deskripsi || !noRekening || jumlah <= 0) {
@@ -71,30 +111,52 @@ export default function FinancialSheet({ currentRole }: FinancialSheetProps) {
       return;
     }
 
-    const currentTxs = [...txs];
-    const prevBalance = currentTxs.length > 0 ? currentTxs[currentTxs.length - 1].saldoAkhir : 0;
-
     const jMasuk = kategori === TransaksiKategori.MASUK ? jumlah : 0;
     const jKeluar = kategori === TransaksiKategori.KELUAR ? jumlah : 0;
-    const newBalance = prevBalance + jMasuk - jKeluar;
 
-    const newTx: FinancialTransaction = {
-      id: `tx_${Date.now()}`,
-      no: currentTxs.length + 1,
-      tanggal,
-      kategori,
-      sumberTujuan,
-      deskripsi,
-      noRekening,
-      jumlahMasuk: jMasuk,
-      jumlahKeluar: jKeluar,
-      saldoAkhir: newBalance,
-      memberId: linkedMember?.id || undefined,
-    };
+    let updatedTxs: FinancialTransaction[] = [];
 
-    const updated = [...currentTxs, newTx];
-    setTxs(updated);
-    saveStoredTransactions(updated);
+    if (editingTxId) {
+      // Edit Mode
+      updatedTxs = txs.map((t) => {
+        if (t.id === editingTxId) {
+          return {
+            ...t,
+            tanggal,
+            kategori,
+            sumberTujuan,
+            deskripsi,
+            noRekening,
+            jumlahMasuk: jMasuk,
+            jumlahKeluar: jKeluar,
+            memberId: linkedMember?.id || undefined,
+          };
+        }
+        return t;
+      });
+      setStatusMessage('Sukses: Transaksi keuangan berhasil diperbarui!');
+    } else {
+      // Add Mode
+      const newTx: FinancialTransaction = {
+        id: `tx_${Date.now()}`,
+        no: txs.length + 1,
+        tanggal,
+        kategori,
+        sumberTujuan,
+        deskripsi,
+        noRekening,
+        jumlahMasuk: jMasuk,
+        jumlahKeluar: jKeluar,
+        saldoAkhir: 0, // Computed in recomputeBalances
+        memberId: linkedMember?.id || undefined,
+      };
+      updatedTxs = [...txs, newTx];
+      setStatusMessage('Sukses: Transaksi keuangan berhasil dicatat!');
+    }
+
+    const finalTxs = recomputeBalances(updatedTxs);
+    setTxs(finalTxs);
+    saveStoredTransactions(finalTxs);
 
     // Create automatic WhatsApp prompt text
     let phoneNum = '081234567890';
@@ -111,17 +173,62 @@ export default function FinancialSheet({ currentRole }: FinancialSheetProps) {
       text: waText,
     });
 
-    // Reset Form
+    // Reset Form & Exit Edit state
+    setEditingTxId(null);
     setDeskripsi('');
     setNoRekening('');
     setJumlah(0);
     setSearchMemberId('');
     setLinkedMember(null);
-    setStatusMessage('Sukses: Transaksi keuangan berhasil dicatat!');
 
     setTimeout(() => {
       setStatusMessage(null);
     }, 5000);
+  };
+
+  const handleEditClick = (tx: FinancialTransaction) => {
+    setEditingTxId(tx.id);
+    setTanggal(tx.tanggal);
+    setKategori(tx.kategori);
+    setSumberTujuan(tx.sumberTujuan);
+    setDeskripsi(tx.deskripsi);
+    setNoRekening(tx.noRekening);
+    setJumlah(tx.kategori === TransaksiKategori.MASUK ? tx.jumlahMasuk : tx.jumlahKeluar);
+
+    if (tx.memberId) {
+      const found = members.find((m) => m.id === tx.memberId);
+      if (found) {
+        setLinkedMember(found);
+        setSearchMemberId(found.noAnggota || found.nama);
+      } else {
+        setLinkedMember(null);
+        setSearchMemberId('');
+      }
+    } else {
+      setLinkedMember(null);
+      setSearchMemberId('');
+    }
+    window.scrollTo({ top: 150, behavior: 'smooth' });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTxId(null);
+    setDeskripsi('');
+    setNoRekening('');
+    setJumlah(0);
+    setSearchMemberId('');
+    setLinkedMember(null);
+  };
+
+  const handleDeleteClick = (id: string) => {
+    if (window.confirm('Apakah Anda yakin ingin menghapus transaksi ini dari ledger Buku Kas IPPI?')) {
+      const remaining = txs.filter((t) => t.id !== id);
+      const finalTxs = recomputeBalances(remaining);
+      setTxs(finalTxs);
+      saveStoredTransactions(finalTxs);
+      setStatusMessage('Sukses: Transaksi keuangan berhasil dihapus secara permanen!');
+      setTimeout(() => setStatusMessage(null), 3000);
+    }
   };
 
   // Aggregators for top KPI cards
@@ -267,7 +374,7 @@ export default function FinancialSheet({ currentRole }: FinancialSheetProps) {
           {currentRole !== 'KETUA' ? (
             <div className="bg-[#FDFCF8] border border-[#E5E0D5] rounded-2xl p-6 shadow-sm">
               <h3 className="text-lg font-serif font-bold text-[#1B365D] border-b border-[#E5E0D5] pb-3 mb-4">
-                Catat Transaksi Kas Baru
+                {editingTxId ? '⚙️ Edit Transaksi Kas Terpilih' : 'Catat Transaksi Kas Baru'}
               </h3>
 
               {statusMessage && (
@@ -276,7 +383,7 @@ export default function FinancialSheet({ currentRole }: FinancialSheetProps) {
                 </div>
               )}
 
-              <form onSubmit={handleAddTransaction} className="space-y-4">
+              <form onSubmit={handleSaveTransaction} className="space-y-4">
                 {/* Auto Link Member lookup */}
                 <div>
                   <label className="block text-xs font-bold text-[#5D574F] mb-1">
@@ -285,17 +392,57 @@ export default function FinancialSheet({ currentRole }: FinancialSheetProps) {
                   <div className="relative">
                     <input
                       type="text"
-                      placeholder="Contoh: 999000011 atau nama..."
+                      placeholder="Masukkan 3+ huruf atau 4+ angka..."
                       value={searchMemberId}
-                      onChange={(e) => handleMemberIdLookup(e.target.value)}
+                      onChange={(e) => {
+                        handleMemberIdLookup(e.target.value);
+                        setShowSearchDropdown(true);
+                      }}
+                      onFocus={() => setShowSearchDropdown(true)}
+                      onBlur={() => setTimeout(() => setShowSearchDropdown(false), 250)}
                       className="w-full bg-white border border-[#E5E0D5] rounded-lg px-3 py-2 pr-10 text-xs focus:ring-1 focus:ring-[#1B365D] focus:outline-none"
                     />
                     <Search className="absolute right-3 top-2.5 w-4 h-4 text-gray-400" />
+
+                    {/* Interactive Dropdown List */}
+                    {showSearchDropdown && filteredSearchMembers.length > 0 && (
+                      <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-[#E5E0D5] rounded-xl shadow-xl max-h-48 overflow-y-auto z-40 divide-y divide-slate-100">
+                        {filteredSearchMembers.map((m) => (
+                          <div
+                            key={m.id}
+                            onMouseDown={() => selectMemberFromDropdown(m)}
+                            className="p-2.5 hover:bg-amber-50/40 bg-white transition-colors cursor-pointer text-left text-xs flex justify-between items-center"
+                          >
+                            <div className="min-w-0 pr-2">
+                              <p className="font-bold text-[#1B365D] truncate">{m.nama}</p>
+                              <p className="text-[10px] text-gray-400 truncate">
+                                No: {m.noAnggota || '-'} • {m.jabatan || 'Anggota'}
+                              </p>
+                            </div>
+                            <span className="shrink-0 text-[10px] font-bold text-[#C5A059] bg-[#FDFCF8] border border-[#E5E0D5] py-0.5 px-2 rounded-full">
+                              Pilih
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   {linkedMember && (
                     <div className="mt-2 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded px-3 py-1.5 text-[11px] flex items-center justify-between">
-                      <span className="font-semibold">Terhubung dengan: {linkedMember.nama}</span>
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <div className="flex items-center space-x-1.5 min-w-0">
+                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span className="font-semibold truncate">Terhubung: {linkedMember.nama}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLinkedMember(null);
+                          setSearchMemberId('');
+                        }}
+                        className="shrink-0 text-[9px] font-bold text-red-700 bg-white hover:bg-red-50 border border-red-350 rounded px-1.5 py-0.5 transition-colors cursor-pointer"
+                      >
+                        Putus Link
+                      </button>
                     </div>
                   )}
                 </div>
@@ -329,12 +476,27 @@ export default function FinancialSheet({ currentRole }: FinancialSheetProps) {
                   <label className="block text-xs font-bold text-[#5D574F] mb-1">Kategori / Sumber Dana</label>
                   <select
                     value={sumberTujuan}
-                    onChange={(e) => setSumberTujuan(e.target.value as SumberDana)}
+                    onChange={(e) => {
+                      const val = e.target.value as SumberDana;
+                      setSumberTujuan(val);
+                      if (val === SumberDana.DANA_DPW) {
+                        setKategori(TransaksiKategori.MASUK);
+                        const conf = getStoredConfig();
+                        const dpwBank = conf.noRekeningIppiBaris1 || 'Bank Jatim Rek: 1023048999 a.n. DPW IPPI JAWA TIMUR';
+                        setNoRekening(dpwBank);
+                        setDeskripsi('Penerimaan dana kontribusi / subsidi dari DPW Jatim');
+                      } else if (val === SumberDana.DANA_DPP) {
+                        setKategori(TransaksiKategori.MASUK);
+                        setNoRekening('Bank BNI - Account 12345678 a.n. DPP IPPI');
+                        setDeskripsi('Dana Subsidi Operasional dari Pengurus Pusat (DPP)');
+                      }
+                    }}
                     className="w-full bg-white border border-[#E5E0D5] rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-[#1B365D]"
                   >
                     <option value={SumberDana.IURAN}>Iuran Anggota ({SumberDana.IURAN})</option>
                     <option value={SumberDana.NOTA_MASUK}>Nota Dana Masuk</option>
                     <option value={SumberDana.DANA_DPP}>Dana DPP</option>
+                    <option value={SumberDana.DANA_DPW}>Penerimaan dari DPW</option>
                     <option value={SumberDana.SPJ}>SPJ Keluar</option>
                     <option value={SumberDana.OPERASIONAL}>Operasional Kantor</option>
                     <option value={SumberDana.LAINNYA}>Lainnya</option>
@@ -377,12 +539,23 @@ export default function FinancialSheet({ currentRole }: FinancialSheetProps) {
                   />
                 </div>
 
-                <button
-                  type="submit"
-                  className="w-full bg-[#1B365D] hover:bg-[#122543] text-white py-3 rounded-lg text-sm font-bold shadow transition-colors cursor-pointer"
-                >
-                  Simpan Transaksi Kas
-                </button>
+                <div className="space-y-2 pt-2">
+                  <button
+                    type="submit"
+                    className="w-full bg-[#1B365D] hover:bg-[#122543] text-white py-3 rounded-lg text-sm font-bold shadow transition-colors cursor-pointer"
+                  >
+                    {editingTxId ? '🔄 Simpan Perubahan Transaksi' : 'Simpan Transaksi Kas'}
+                  </button>
+                  {editingTxId && (
+                    <button
+                      type="button"
+                      onClick={handleCancelEdit}
+                      className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-lg text-xs font-semibold border border-gray-300 transition-colors cursor-pointer"
+                    >
+                      Batal Edit (Buat Baru)
+                    </button>
+                  )}
+                </div>
               </form>
             </div>
           ) : (
@@ -467,18 +640,21 @@ export default function FinancialSheet({ currentRole }: FinancialSheetProps) {
                     <th className="px-3 py-3 font-semibold w-24 text-right">Masuk (Rp)</th>
                     <th className="px-3 py-3 font-semibold w-24 text-right">Keluar (Rp)</th>
                     <th className="px-3 py-3 font-semibold w-28 text-right bg-slate-50">Saldo Akhir</th>
+                    {(currentRole === 'ADMIN' || currentRole === 'BENDAHARA') && (
+                      <th className="px-3 py-3 font-semibold w-20 text-center">Aksi</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#F4F1EA]">
                   {txs.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-[#8B7E66] italic">
+                      <td colSpan={currentRole === 'ADMIN' || currentRole === 'BENDAHARA' ? 8 : 7} className="px-4 py-8 text-center text-[#8B7E66] italic">
                         Belum ada pencatatan kas tercatat.
                       </td>
                     </tr>
                   ) : (
                     txs.map((tx) => (
-                      <tr key={tx.id} className="hover:bg-[#FDFCF8]">
+                      <tr key={tx.id} className="hover:bg-[#FDFCF8] transition-colors">
                         <td className="px-3 py-3.5 text-center text-gray-500">{tx.no}</td>
                         <td className="px-3 py-3.5 font-medium whitespace-nowrap">{tx.tanggal}</td>
                         <td className="px-3 py-3.5 whitespace-nowrap">
@@ -501,6 +677,26 @@ export default function FinancialSheet({ currentRole }: FinancialSheetProps) {
                         <td className="px-3 py-3.5 text-right font-bold text-[#1B365D] bg-slate-50 whitespace-nowrap">
                           Rp {tx.saldoAkhir.toLocaleString('id-ID')}
                         </td>
+                        {(currentRole === 'ADMIN' || currentRole === 'BENDAHARA') && (
+                          <td className="px-2 py-3.5 text-center whitespace-nowrap">
+                            <div className="flex items-center justify-center space-x-1.5">
+                              <button
+                                onClick={() => handleEditClick(tx)}
+                                title="Edit Transaksi ini"
+                                className="p-1.5 text-slate-500 hover:text-blue-700 hover:bg-blue-50 rounded transition-all cursor-pointer"
+                              >
+                                <Edit className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteClick(tx.id)}
+                                title="Hapus Transaksi ini"
+                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-rose-50 rounded transition-all cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     ))
                   )}

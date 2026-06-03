@@ -47,6 +47,8 @@ export interface OrgConfig {
   noIjinPendirian: string;
   noTelp: string;
   email: string;
+  noRekeningIppiBaris1?: string;
+  noRekeningIppiBaris2?: string;
 }
 
 export interface VisitorLog {
@@ -67,6 +69,7 @@ export enum SumberDana {
   IURAN = 'Iuran Anggota',
   NOTA_MASUK = 'Nota Dana Masuk',
   DANA_DPP = 'Dana DPP',
+  DANA_DPW = 'Penerimaan dari DPW',
   SPJ = 'SPJ',
   OPERASIONAL = 'Operasional',
   LAINNYA = 'Lainnya',

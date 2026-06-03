@@ -805,6 +805,42 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
             </div>
           </div>
 
+          {/* Tambahan Info Rekening DPW IPPI Jawa Timur (2 Baris) */}
+          <div className="bg-[#1B365D]/5 border border-[#1B365D]/10 rounded-xl p-5 space-y-4">
+            <h4 className="text-xs font-bold text-[#1B365D] uppercase tracking-wider flex items-center space-x-1.5">
+              <span>💳 Rekening Resmi DPW IPPI Jawa Timur (2 Baris)</span>
+            </h4>
+            <p className="text-[11px] text-[#5D574F]">
+              Informasi rekening ini akan ditampilkan secara dinamis di halaman depan (Beranda Utama) dan di portal utama akses Anggota sebagai rujukan pembayaran.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-[#5D574F] uppercase mb-2">
+                  No Rekening Baris 1
+                </label>
+                <input
+                  type="text"
+                  value={config.noRekeningIppiBaris1 || ''}
+                  onChange={(e) => setConfig({ ...config, noRekeningIppiBaris1: e.target.value })}
+                  placeholder="Contoh: Bank Jatim Rek: 1023048999"
+                  className="w-full bg-white border border-[#E5E0D5] rounded-lg px-4 py-2.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#5D574F] uppercase mb-2">
+                  No Rekening Baris 2
+                </label>
+                <input
+                  type="text"
+                  value={config.noRekeningIppiBaris2 || ''}
+                  onChange={(e) => setConfig({ ...config, noRekeningIppiBaris2: e.target.value })}
+                  placeholder="Contoh: a.n. DPW IPPI JAWA TIMUR"
+                  className="w-full bg-white border border-[#E5E0D5] rounded-lg px-4 py-2.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                />
+              </div>
+            </div>
+          </div>
+
           <div className="pt-4 border-t border-[#F4F1EA]">
             <button
               type="submit"
