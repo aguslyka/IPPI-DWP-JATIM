@@ -261,8 +261,7 @@ export default function App() {
         <div className="flex items-center space-x-1 sm:space-x-2">
           <span className="inline-flex max-sm:hidden w-2 h-2 bg-emerald-400 rounded-full animate-bounce"></span>
           <span className="font-serif italic text-[11px] sm:text-xs">
-            Selamat Datang di Portal Ikatan Profesional & Pensiunan Indonesia | Ijin Kemenkumham : AHU Kemenkum-0010333.AH.01.07.Tahun 2025 (13-01-2026)
-          </span>
+            Selamat Datang di Portal Ikatan Profesional & Pensiunan Indonesia |           </span>
         </div>
 
         {/* Font Zoom Controller & Auth Switcher */}
