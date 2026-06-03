@@ -145,7 +145,7 @@ const INITIAL_CONTENT: HomepageContent = {
   heroTitle: 'Masa Pensiun Adalah Babak Baru Pengabdian.',
   heroSub: 'DEDIKASI TANPA BATAS, PENGALAMAN BERHARGA',
   heroText: 'Selamat datang di IPPI. Wadah terhormat bagi para pensiunan profesional Indonesia yang ingin terus berbagi keahlian, bersosialisasi, dan aktif berkontribusi bagi kemajuan bangsa meskipun telah memasuki masa purna bakti.',
-  visiMisi: 'Menjadi organisasi bagi pensiunan profesional terdepan yang aktif dalam pemberdayaan masyarakat, kemitraan strategis, serta peningkatan kesejahteraan rohani, jasmani, sosial dan bisnis bagi para anggotanya.',
+  visiMisi: 'Menjadi organisasi pensiunan profesional terdepan yang aktif dalam pemberdayaan masyarakat, kemitraan strategis, peningkatan kesejahteraan rohani, jasmani dan sosial serta bisnis bagi para anggotanya.',
   mengapaBergabung: [
     'Akses ke Jejaring Profesional Nasional lintas keilmuan',
     'Kesempatan berkontribusi aktif sebagai Konsultan / Tenaga Ahli tamu',
@@ -173,7 +173,7 @@ const INITIAL_CONTENT: HomepageContent = {
   strukturList: [
     {
       id: 'str1',
-      nama: 'Prof. Dr. Ir. H. Mohammad Muslih, S.H., M.M.',
+      nama: 'Mohammad Muslih, S.H., M.M.',
       jabatan: 'Ketua Umum Pappi/IPPI',
       photoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&fit=crop&auto=format',
       urutan: 1
@@ -484,7 +484,13 @@ export function initializeFirestoreSync() {
         handleFirestoreError(error, OperationType.WRITE, 'content/main');
       }
     } else {
-      const content = snapshot.data() as HomepageContent;
+      let content = snapshot.data() as HomepageContent;
+      const oldVisi1 = 'Menjadi organisasi pensiunan profesional terdepan yang aktif dalam pemberdayaan masyarakat, kemitraan strategis, serta peningkatan kesejahteraan rohani, jasmani, dan sosial para anggotanya.';
+      const oldVisi2 = 'Menjadi organisasi bagi pensiunan profesional terdepan yang aktif dalam pemberdayaan masyarakat, kemitraan strategis, serta peningkatan kesejahteraan rohani, jasmani, sosial dan bisnis bagi para anggotanya.';
+      if (!content.visiMisi || content.visiMisi === oldVisi1 || content.visiMisi === oldVisi2 || content.visiMisi.includes('serta peningkatan kesejahteraan rohani') || content.visiMisi.includes('organisasi bagi pensiunan profesional')) {
+        content = { ...content, visiMisi: INITIAL_CONTENT.visiMisi };
+        setDoc(doc(db, 'content', 'main'), content).catch(() => {});
+      }
       localStorage.setItem('ippi_content', JSON.stringify(content));
       notifyListeners();
     }
@@ -630,6 +636,15 @@ export function getStoredContent(): HomepageContent {
     parsed.fokusList = INITIAL_CONTENT.fokusList || [];
     updated = true;
   }
+  
+  // Auto-migrate outdated/stale visiMisi text to the requested updated wording
+  const oldVisi1 = 'Menjadi organisasi pensiunan profesional terdepan yang aktif dalam pemberdayaan masyarakat, kemitraan strategis, serta peningkatan kesejahteraan rohani, jasmani, dan sosial para anggotanya.';
+  const oldVisi2 = 'Menjadi organisasi bagi pensiunan profesional terdepan yang aktif dalam pemberdayaan masyarakat, kemitraan strategis, serta peningkatan kesejahteraan rohani, jasmani, sosial dan bisnis bagi para anggotanya.';
+  if (!parsed.visiMisi || parsed.visiMisi === oldVisi1 || parsed.visiMisi === oldVisi2 || parsed.visiMisi.includes('serta peningkatan kesejahteraan rohani') || parsed.visiMisi.includes('organisasi bagi pensiunan profesional')) {
+    parsed.visiMisi = INITIAL_CONTENT.visiMisi;
+    updated = true;
+  }
+
   if (updated) {
     localStorage.setItem('ippi_content', JSON.stringify(parsed));
   }

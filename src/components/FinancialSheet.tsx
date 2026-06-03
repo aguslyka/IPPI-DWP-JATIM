@@ -707,7 +707,7 @@ export default function FinancialSheet({ currentRole }: FinancialSheetProps) {
             {/* Quick Summary footnote */}
             <div className="mt-4 pt-4 border-t border-[#F4F1EA] text-[11px] text-[#5D574F] italic flex justify-between items-center bg-slate-50 p-2.5 rounded">
               <span>* Semua rumus saldo dihitung secara otomatis dan real-time dari riwayat transaksi terdahulu.</span>
-              <span className="font-serif font-bold text-[#1B365D]">IPPI DPP Pusat</span>
+              <span className="font-serif font-bold text-[#1B365D]">IPPI DPW Jawa Tumur</span>
             </div>
           </div>
         </div>
