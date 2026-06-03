@@ -132,12 +132,12 @@ const IPPI_LOGO_DATA_URL = `data:image/svg+xml;utf8,${encodeURIComponent(IPPI_LO
 const INITIAL_CONFIG: OrgConfig = {
   logoText: 'IPPI',
   logoUrl: IPPI_LOGO_DATA_URL,
-  namaSekretariat: 'Sekretariat DPP IPPI Pusat',
-  alamatSekretariat: 'Gedung Graha Profesional, Lantai 4, Jl. Diponegoro No. 84, Menteng, Jakarta Pusat 10310',
-  noIjinPendirian: 'AHU-0012411.AH.01.07.Tahun 2024',
-  noTelp: '021-3901234',
-  email: 'dpp@ippi-pensiunan.or.id',
-  noRekeningIppiBaris1: 'Bank Jatim Rek: 1023048999 a.n. DPW IPPI JAWA TIMUR',
+  namaSekretariat: 'Sekretariat DPW IPPI Jawa Timur',
+  alamatSekretariat: 'Jl. Krembangan Barat 73-75 Surabaya 60175',
+  noIjinPendirian: 'AHU Kemenkum-0010333.AH.01.07.Tahun 2025 (13-01-2026)',
+  noTelp: '0821-4566-8301/ 0852-3099-6333/ 0821-4165-6855',
+  email: 'ippidpwjatim@gmail.com',
+  noRekeningIppiBaris1: 'Pospay Nomor Rekening: 0195873518 a.n. DPW IPPI JAWA TIMUR',
   noRekeningIppiBaris2: 'Bank Mandiri Rek: 1400018889992 a.n. DPW IPPI JATIM'
 };
 
