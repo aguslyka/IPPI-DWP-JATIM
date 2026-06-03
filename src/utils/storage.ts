@@ -145,7 +145,7 @@ const INITIAL_CONTENT: HomepageContent = {
   heroTitle: 'Masa Pensiun Adalah Babak Baru Pengabdian.',
   heroSub: 'DEDIKASI TANPA BATAS, PENGALAMAN BERHARGA',
   heroText: 'Selamat datang di IPPI. Wadah terhormat bagi para pensiunan profesional Indonesia yang ingin terus berbagi keahlian, bersosialisasi, dan aktif berkontribusi bagi kemajuan bangsa meskipun telah memasuki masa purna bakti.',
-  visiMisi: 'Menjadi organisasi pensiunan profesional terdepan yang aktif dalam pemberdayaan masyarakat, kemitraan strategis, peningkatan kesejahteraan rohani, jasmani dan sosial serta bisnis bagi para anggotanya.',
+  visiMisi: 'Menjadi organisasi pensiunan profesional terdepan yang aktif dalam pemberdayaan masyarakat, kemitraan strategis, peningkatan kesejahteraan rohani, jasmani, sosial dan bisnis bagi para anggotanya.',
   mengapaBergabung: [
     'Akses ke Jejaring Profesional Nasional lintas keilmuan',
     'Kesempatan berkontribusi aktif sebagai Konsultan / Tenaga Ahli tamu',
@@ -487,7 +487,18 @@ export function initializeFirestoreSync() {
       let content = snapshot.data() as HomepageContent;
       const oldVisi1 = 'Menjadi organisasi pensiunan profesional terdepan yang aktif dalam pemberdayaan masyarakat, kemitraan strategis, serta peningkatan kesejahteraan rohani, jasmani, dan sosial para anggotanya.';
       const oldVisi2 = 'Menjadi organisasi bagi pensiunan profesional terdepan yang aktif dalam pemberdayaan masyarakat, kemitraan strategis, serta peningkatan kesejahteraan rohani, jasmani, sosial dan bisnis bagi para anggotanya.';
-      if (!content.visiMisi || content.visiMisi === oldVisi1 || content.visiMisi === oldVisi2 || content.visiMisi.includes('serta peningkatan kesejahteraan rohani') || content.visiMisi.includes('organisasi bagi pensiunan profesional')) {
+      const oldVisi3 = 'Menjadi organisasi pensiunan profesional terdepan yang aktif dalam pemberdayaan masyarakat, kemitraan strategis, peningkatan kesejahteraan rohani, jasmani dan sosial serta bisnis bagi para anggotanya.';
+      const oldVisi4 = 'Menjadi organisasi pensiunan profesional terdepan yang aktif dalam pemberdayaan masyarakat, kemitraan strategis, peningkatan kesejahteraan rohani, jasmani, dan sosial dan bisnis bagi para anggotanya.';
+      if (
+        !content.visiMisi || 
+        content.visiMisi === oldVisi1 || 
+        content.visiMisi === oldVisi2 || 
+        content.visiMisi === oldVisi3 || 
+        content.visiMisi === oldVisi4 || 
+        content.visiMisi.includes('dan sosial serta bisnis') || 
+        content.visiMisi.includes('dan sosial dan bisnis') || 
+        content.visiMisi.includes('organisasi bagi pensiunan')
+      ) {
         content = { ...content, visiMisi: INITIAL_CONTENT.visiMisi };
         setDoc(doc(db, 'content', 'main'), content).catch(() => {});
       }
@@ -640,7 +651,18 @@ export function getStoredContent(): HomepageContent {
   // Auto-migrate outdated/stale visiMisi text to the requested updated wording
   const oldVisi1 = 'Menjadi organisasi pensiunan profesional terdepan yang aktif dalam pemberdayaan masyarakat, kemitraan strategis, serta peningkatan kesejahteraan rohani, jasmani, dan sosial para anggotanya.';
   const oldVisi2 = 'Menjadi organisasi bagi pensiunan profesional terdepan yang aktif dalam pemberdayaan masyarakat, kemitraan strategis, serta peningkatan kesejahteraan rohani, jasmani, sosial dan bisnis bagi para anggotanya.';
-  if (!parsed.visiMisi || parsed.visiMisi === oldVisi1 || parsed.visiMisi === oldVisi2 || parsed.visiMisi.includes('serta peningkatan kesejahteraan rohani') || parsed.visiMisi.includes('organisasi bagi pensiunan profesional')) {
+  const oldVisi3 = 'Menjadi organisasi pensiunan profesional terdepan yang aktif dalam pemberdayaan masyarakat, kemitraan strategis, peningkatan kesejahteraan rohani, jasmani dan sosial serta bisnis bagi para anggotanya.';
+  const oldVisi4 = 'Menjadi organisasi pensiunan profesional terdepan yang aktif dalam pemberdayaan masyarakat, kemitraan strategis, peningkatan kesejahteraan rohani, jasmani, dan sosial dan bisnis bagi para anggotanya.';
+  if (
+    !parsed.visiMisi || 
+    parsed.visiMisi === oldVisi1 || 
+    parsed.visiMisi === oldVisi2 || 
+    parsed.visiMisi === oldVisi3 || 
+    parsed.visiMisi === oldVisi4 || 
+    parsed.visiMisi.includes('dan sosial serta bisnis') || 
+    parsed.visiMisi.includes('dan sosial dan bisnis') || 
+    parsed.visiMisi.includes('organisasi bagi pensiunan')
+  ) {
     parsed.visiMisi = INITIAL_CONTENT.visiMisi;
     updated = true;
   }

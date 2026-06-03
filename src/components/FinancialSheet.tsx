@@ -53,6 +53,19 @@ export default function FinancialSheet({ currentRole }: FinancialSheetProps) {
   // Edit states for Admin Role
   const [editingTxId, setEditingTxId] = useState<string | null>(null);
 
+  // Custom confirmation dialog state (yakin / tidak)
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
   useEffect(() => {
     const handleReload = () => {
       setTxs(getStoredTransactions());
@@ -114,76 +127,92 @@ export default function FinancialSheet({ currentRole }: FinancialSheetProps) {
     const jMasuk = kategori === TransaksiKategori.MASUK ? jumlah : 0;
     const jKeluar = kategori === TransaksiKategori.KELUAR ? jumlah : 0;
 
-    let updatedTxs: FinancialTransaction[] = [];
+    const executeSave = () => {
+      let updatedTxs: FinancialTransaction[] = [];
+
+      if (editingTxId) {
+        // Edit Mode
+        updatedTxs = txs.map((t) => {
+          if (t.id === editingTxId) {
+            return {
+              ...t,
+              tanggal,
+              kategori,
+              sumberTujuan,
+              deskripsi,
+              noRekening,
+              jumlahMasuk: jMasuk,
+              jumlahKeluar: jKeluar,
+              memberId: linkedMember?.id || undefined,
+            };
+          }
+          return t;
+        });
+        setStatusMessage('Sukses: Transaksi keuangan berhasil diperbarui!');
+      } else {
+        // Add Mode
+        const newTx: FinancialTransaction = {
+          id: `tx_${Date.now()}`,
+          no: txs.length + 1,
+          tanggal,
+          kategori,
+          sumberTujuan,
+          deskripsi,
+          noRekening,
+          jumlahMasuk: jMasuk,
+          jumlahKeluar: jKeluar,
+          saldoAkhir: 0, // Computed in recomputeBalances
+          memberId: linkedMember?.id || undefined,
+        };
+        updatedTxs = [...txs, newTx];
+        setStatusMessage('Sukses: Transaksi keuangan berhasil dicatat!');
+      }
+
+      const finalTxs = recomputeBalances(updatedTxs);
+      setTxs(finalTxs);
+      saveStoredTransactions(finalTxs);
+
+      // Create automatic WhatsApp prompt text
+      let phoneNum = '081234567890';
+      let waText = '';
+      if (kategori === TransaksiKategori.MASUK) {
+        phoneNum = linkedMember ? linkedMember.noTelp : '081803100222';
+        waText = `Yth. Anggota IPPI, Terima kasih pembayaran Iuran Anda sebesar Rp ${jumlah.toLocaleString('id-ID')} telah kami verifikasi masuk ke kas keuangan IPPI pada tanggal ${tanggal}. Semoga berkah dan sehat selalu! - Bendahara IPPI`;
+      } else {
+        waText = `Pemberitahuan IPPI: Pengeluaran dana SPJ dengan perihal "${deskripsi}" sebesar Rp ${jumlah.toLocaleString('id-ID')} telah dicairkan dan ditransfer ke rekening ${noRekening} pada tanggal ${tanggal}. Harap simpan nota lunas Anda. Terima kasih. - Bendahara IPPI`;
+      }
+
+      setWhatsappMock({
+        phone: phoneNum,
+        text: waText,
+      });
+
+      // Reset Form & Exit Edit state
+      setEditingTxId(null);
+      setDeskripsi('');
+      setNoRekening('');
+      setJumlah(0);
+      setSearchMemberId('');
+      setLinkedMember(null);
+
+      setTimeout(() => {
+        setStatusMessage(null);
+      }, 5000);
+    };
 
     if (editingTxId) {
-      // Edit Mode
-      updatedTxs = txs.map((t) => {
-        if (t.id === editingTxId) {
-          return {
-            ...t,
-            tanggal,
-            kategori,
-            sumberTujuan,
-            deskripsi,
-            noRekening,
-            jumlahMasuk: jMasuk,
-            jumlahKeluar: jKeluar,
-            memberId: linkedMember?.id || undefined,
-          };
+      setConfirmModal({
+        isOpen: true,
+        title: 'Konfirmasi Perubahan Transaksi',
+        message: 'Apakah Anda yakin ingin menyimpan perubahan data transaksi kas di Buku Kas IPPI ini?',
+        onConfirm: () => {
+          executeSave();
+          setConfirmModal((prev) => ({ ...prev, isOpen: false }));
         }
-        return t;
       });
-      setStatusMessage('Sukses: Transaksi keuangan berhasil diperbarui!');
     } else {
-      // Add Mode
-      const newTx: FinancialTransaction = {
-        id: `tx_${Date.now()}`,
-        no: txs.length + 1,
-        tanggal,
-        kategori,
-        sumberTujuan,
-        deskripsi,
-        noRekening,
-        jumlahMasuk: jMasuk,
-        jumlahKeluar: jKeluar,
-        saldoAkhir: 0, // Computed in recomputeBalances
-        memberId: linkedMember?.id || undefined,
-      };
-      updatedTxs = [...txs, newTx];
-      setStatusMessage('Sukses: Transaksi keuangan berhasil dicatat!');
+      executeSave();
     }
-
-    const finalTxs = recomputeBalances(updatedTxs);
-    setTxs(finalTxs);
-    saveStoredTransactions(finalTxs);
-
-    // Create automatic WhatsApp prompt text
-    let phoneNum = '081234567890';
-    let waText = '';
-    if (kategori === TransaksiKategori.MASUK) {
-      phoneNum = linkedMember ? linkedMember.noTelp : '081803100222';
-      waText = `Yth. Anggota IPPI, Terima kasih pembayaran Iuran Anda sebesar Rp ${jumlah.toLocaleString('id-ID')} telah kami verifikasi masuk ke kas keuangan IPPI pada tanggal ${tanggal}. Semoga berkah dan sehat selalu! - Bendahara IPPI`;
-    } else {
-      waText = `Pemberitahuan IPPI: Pengeluaran dana SPJ dengan perihal "${deskripsi}" sebesar Rp ${jumlah.toLocaleString('id-ID')} telah dicairkan dan ditransfer ke rekening ${noRekening} pada tanggal ${tanggal}. Harap simpan nota lunas Anda. Terima kasih. - Bendahara IPPI`;
-    }
-
-    setWhatsappMock({
-      phone: phoneNum,
-      text: waText,
-    });
-
-    // Reset Form & Exit Edit state
-    setEditingTxId(null);
-    setDeskripsi('');
-    setNoRekening('');
-    setJumlah(0);
-    setSearchMemberId('');
-    setLinkedMember(null);
-
-    setTimeout(() => {
-      setStatusMessage(null);
-    }, 5000);
   };
 
   const handleEditClick = (tx: FinancialTransaction) => {
@@ -221,14 +250,20 @@ export default function FinancialSheet({ currentRole }: FinancialSheetProps) {
   };
 
   const handleDeleteClick = (id: string) => {
-    if (window.confirm('Apakah Anda yakin ingin menghapus transaksi ini dari ledger Buku Kas IPPI?')) {
-      const remaining = txs.filter((t) => t.id !== id);
-      const finalTxs = recomputeBalances(remaining);
-      setTxs(finalTxs);
-      saveStoredTransactions(finalTxs);
-      setStatusMessage('Sukses: Transaksi keuangan berhasil dihapus secara permanen!');
-      setTimeout(() => setStatusMessage(null), 3000);
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: 'Konfirmasi Penghapusan Transaksi',
+      message: 'Apakah Anda yakin ingin menghapus transaksi ini dari ledger Buku Kas IPPI secara permanen?',
+      onConfirm: () => {
+        const remaining = txs.filter((t) => t.id !== id);
+        const finalTxs = recomputeBalances(remaining);
+        setTxs(finalTxs);
+        saveStoredTransactions(finalTxs);
+        setStatusMessage('Sukses: Transaksi keuangan berhasil dihapus secara permanen!');
+        setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+        setTimeout(() => setStatusMessage(null), 3000);
+      }
+    });
   };
 
   // Aggregators for top KPI cards
@@ -707,12 +742,63 @@ export default function FinancialSheet({ currentRole }: FinancialSheetProps) {
             {/* Quick Summary footnote */}
             <div className="mt-4 pt-4 border-t border-[#F4F1EA] text-[11px] text-[#5D574F] italic flex justify-between items-center bg-slate-50 p-2.5 rounded">
               <span>* Semua rumus saldo dihitung secara otomatis dan real-time dari riwayat transaksi terdahulu.</span>
-              <span className="font-serif font-bold text-[#1B365D]">IPPI DPW Jawa Tumur</span>
+              <span className="font-serif font-bold text-[#1B365D]">IPPI DPW Jawa Timur</span>
             </div>
           </div>
         </div>
 
       </div>
+
+      {/* Custom Confirmation Popup Dialog (Yakin dan Tidak) */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 bg-[#1B365D]/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl border border-[#E5E0D5] p-6 max-w-md w-full shadow-2xl relative animate-in fade-in zoom-in duration-200">
+            <div className="flex items-start space-x-4">
+              <div className={`p-3 rounded-full border flex-shrink-0 ${
+                confirmModal.title.includes('Penghapusan') 
+                  ? 'bg-rose-50 border-rose-200 text-rose-600' 
+                  : 'bg-indigo-50 border-indigo-200 text-[#1B365D]'
+              }`}>
+                {confirmModal.title.includes('Penghapusan') ? (
+                  <Trash2 className="w-6 h-6" />
+                ) : (
+                  <Edit className="w-6 h-6" />
+                )}
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-serif font-bold text-[#1B365D] mb-1">
+                  {confirmModal.title}
+                </h3>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  {confirmModal.message}
+                </p>
+              </div>
+            </div>
+            
+            <div className="mt-6 flex items-center justify-end space-x-2.5">
+              <button
+                type="button"
+                onClick={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+                className="px-4 py-2 text-xs font-bold border border-[#E5E0D5] hover:bg-slate-50 text-gray-500 rounded-xl transition-colors cursor-pointer"
+              >
+                Tidak / Batal
+              </button>
+              <button
+                type="button"
+                onClick={confirmModal.onConfirm}
+                className={`px-4.5 py-2 text-xs font-bold text-white rounded-xl shadow-md transition-all cursor-pointer hover:shadow-lg ${
+                  confirmModal.title.includes('Penghapusan')
+                    ? 'bg-rose-600 hover:bg-rose-700 active:scale-95'
+                    : 'bg-[#1B365D] hover:bg-[#254673] active:scale-95'
+                }`}
+              >
+                Yakin / Ya
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
