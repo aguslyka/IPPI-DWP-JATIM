@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Member, UserRole, OrgConfig, HomepageContent } from './types';
-import { getStoredConfig, getStoredContent, getStoredMembers, saveStoredMembers, logVisitorAction, saveStoredContent, getStoredTransactions } from './utils/storage';
+import { getStoredConfig, getStoredContent, getStoredMembers, saveStoredMembers, logVisitorAction, saveStoredContent, getStoredTransactions, getStoredNeraca } from './utils/storage';
 import RegistrationForm from './components/RegistrationForm';
 import LoginModal from './components/LoginModal';
 import MemberCard from './components/MemberCard';
@@ -10,6 +10,7 @@ import AdminPanel from './components/AdminPanel';
 import SecretaryPanel from './components/SecretaryPanel';
 import KopSurat from './components/KopSurat';
 import LapakUmkm from './components/LapakUmkm';
+import LaporanNeraca from './components/LaporanNeraca';
 
 import {
   Menu,
@@ -49,6 +50,7 @@ export default function App() {
   const [orgConfig, setOrgConfig] = useState<OrgConfig>(getStoredConfig());
   const [homeContent, setHomeContent] = useState<HomepageContent>(getStoredContent());
   const [txs, setTxs] = useState(() => getStoredTransactions());
+  const [neraca, setNeraca] = useState(() => getStoredNeraca());
 
   // Session states
   const [currentUser, setCurrentUser] = useState<Member | null>(null);
@@ -102,6 +104,7 @@ export default function App() {
       setOrgConfig(getStoredConfig());
       setHomeContent(getStoredContent());
       setTxs(getStoredTransactions());
+      setNeraca(getStoredNeraca());
       setRegisteredCount(getStoredMembers().length);
 
       const sessionUser = sessionStorage.getItem('ippi_active_user');
@@ -1369,6 +1372,11 @@ export default function App() {
                       <h3 className="text-sm font-serif font-bold text-[#1B365D] uppercase tracking-wider mb-4 text-center">
                         🔒 Akses Akumulatif Kumulatif Admin (Full-Rights View)
                       </h3>
+
+                      <div className="bg-white rounded-3xl border border-gray-200 p-4 mb-6 text-left">
+                        <h4 className="font-bold text-xs uppercase tracking-wide text-amber-800 mb-3 border-b pb-1">Laporan & Input Neraca Keuangan</h4>
+                        <LaporanNeraca currentRole={currentRole} txs={txs} neraca={neraca} />
+                      </div>
                       
                       <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
                         <h4 className="font-bold text-xs uppercase tracking-wide text-amber-800 mb-2">Buku Kas Laporan Bendahara (Ledger)</h4>
@@ -1394,153 +1402,23 @@ export default function App() {
 
                 {/* 4. TREASURER (BENDAHARA) PANEL FOR FINANCIAL LEDGER */}
                 {currentRole === UserRole.BENDAHARA && (
-                  <div className="space-y-6">
+                  <div className="space-y-8">
+                    <LaporanNeraca currentRole={currentRole} txs={txs} neraca={neraca} />
                     <FinancialSheet currentRole={currentRole} />
                   </div>
                 )}
 
                 {/* 5. CHAIRMAN (KETUA) ACCESSIBILITY PANEL */}
-                {currentRole === UserRole.KETUA && (() => {
-                  const totalMasuk = txs.reduce((acc, curr) => acc + (curr.jumlahMasuk || 0), 0);
-                  const totalKeluar = txs.reduce((acc, curr) => acc + (curr.jumlahKeluar || 0), 0);
-                  const currentBalance = totalMasuk - totalKeluar;
-                  const liabilitas = 0;
-                  const ekuitasBersih = currentBalance - liabilitas;
-
-                  return (
-                    <div className="space-y-8">
-                      {/* Laporan Neraca Keuangan Formal */}
-                      <div className="bg-white border border-[#E5E0D5] rounded-3xl p-6 sm:p-8 text-left shadow-xs space-y-6">
-                        <div className="text-center space-y-1.5 border-b-2 border-[#1B365D] pb-4">
-                          <h3 className="text-[10px] uppercase font-bold tracking-widest text-[#8B7E66]">IKATAN PENSIUNAN PEGAWAI INDONESIA (IPPI)</h3>
-                          <h4 className="text-xl font-serif text-[#1B365D] font-extrabold">LAPORAN NERACA KEUANGAN ORGANISASI</h4>
-                          <p className="text-[11px] text-gray-500 font-mono">
-                            Per Tanggal: {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
-                          </p>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 divide-y md:divide-y-0 md:divide-x divide-gray-200">
-                          {/* SISI AKTIVA */}
-                          <div className="space-y-4 text-sm">
-                            <h5 className="font-bold text-[#1B365D] border-b pb-1 flex justify-between uppercase tracking-wider text-xs">
-                              <span>I. AKTIVA (ASET)</span>
-                              <span className="text-gray-400 font-normal">Lancar & Tetap</span>
-                            </h5>
-                            
-                            <div className="space-y-3">
-                              <div>
-                                <h6 className="font-semibold text-gray-700 text-xs text-left">A. Aset Lancar</h6>
-                                <div className="pl-3 space-y-1.5 mt-1 text-xs">
-                                  <div className="flex justify-between items-center text-gray-600 font-sans">
-                                    <span>Kas dan Bank (Saldo Kas IPPI)</span>
-                                    <span className="font-mono text-gray-900 font-semibold">Rp {currentBalance.toLocaleString('id-ID')}</span>
-                                  </div>
-                                  <div className="flex justify-between items-center text-gray-400 font-sans">
-                                    <span>Piutang Anggota</span>
-                                    <span className="font-mono">Rp 0</span>
-                                  </div>
-                                  <div className="flex justify-between items-center text-gray-400 font-sans">
-                                    <span>Uang Muka / Panjar SPJ</span>
-                                    <span className="font-mono">Rp 0</span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="pt-2">
-                                <h6 className="font-semibold text-gray-700 text-xs text-left">B. Aset Tetap</h6>
-                                <div className="pl-3 space-y-1.5 mt-1 text-xs">
-                                  <div className="flex justify-between items-center text-gray-400 font-sans">
-                                    <span>Peralatan & Inventaris Kantor</span>
-                                    <span className="font-mono">Rp 0</span>
-                                  </div>
-                                  <div className="flex justify-between items-center text-gray-400 font-sans">
-                                    <span>Akumulasi Penyusutan</span>
-                                    <span className="font-mono">Rp 0</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* SISI PASIVA */}
-                          <div className="space-y-4 text-sm pt-4 md:pt-0 md:pl-8">
-                            <h5 className="font-bold text-[#1B365D] border-b pb-1 flex justify-between uppercase tracking-wider text-xs">
-                              <span>II. PASIVA (KEWAJIBAN & EKUITAS)</span>
-                              <span className="text-gray-400 font-normal">Hak & Kewajiban</span>
-                            </h5>
-
-                            <div className="space-y-3">
-                              <div>
-                                <h6 className="font-semibold text-gray-700 text-xs text-left">A. Kewajiban (Liabilitas)</h6>
-                                <div className="pl-3 space-y-1.5 mt-1 text-xs">
-                                  <div className="flex justify-between items-center text-gray-400 font-sans">
-                                    <span>Hutang Jangka Pendek (Operasional)</span>
-                                    <span className="font-mono">Rp 0</span>
-                                  </div>
-                                  <div className="flex justify-between items-center text-gray-400 font-sans">
-                                    <span>Kewajiban Pembayaran Lainnya</span>
-                                    <span className="font-mono">Rp 0</span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="pt-2">
-                                <h6 className="font-semibold text-gray-700 text-xs text-left">B. Ekuitas (Kekayaan Bersih)</h6>
-                                <div className="pl-3 space-y-1.5 mt-1 text-xs">
-                                  <div className="flex justify-between items-center text-gray-400 font-sans">
-                                    <span>Modal/Dana Cadangan Organisasi</span>
-                                    <span className="font-mono">Rp 0</span>
-                                  </div>
-                                  <div className="flex justify-between items-center text-gray-600 font-sans">
-                                    <span>Surplus / Defisit Periode Berjalan</span>
-                                    <span className="font-mono text-gray-900 font-semibold">Rp {ekuitasBersih.toLocaleString('id-ID')}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* TOTALS BAR */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t-2 border-dashed border-gray-200 text-sm font-sans">
-                          <div className="bg-emerald-50 border border-emerald-100 p-3.5 rounded-xl flex justify-between items-center">
-                            <span className="font-bold text-emerald-800 text-xs uppercase tracking-wider">TOTAL AKTIVA (ASET)</span>
-                            <span className="font-mono text-emerald-950 font-extrabold text-base">
-                              Rp {currentBalance.toLocaleString('id-ID')}
-                            </span>
-                          </div>
-                          
-                          <div className="bg-emerald-50 border border-emerald-100 p-3.5 rounded-xl flex justify-between items-center md:ml-4">
-                            <span className="font-bold text-emerald-800 text-xs uppercase tracking-wider">TOTAL PASIVA (KEWAJIBAN & EKUITAS)</span>
-                            <span className="font-mono text-emerald-950 font-extrabold text-base">
-                              Rp {ekuitasBersih.toLocaleString('id-ID')}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between text-xs text-gray-500 pt-2 font-sans bg-gray-50 p-3 rounded-xl border border-gray-100">
-                          <div className="flex items-center gap-1.5">
-                            <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                            <span className="font-medium text-[11px]">Neraca Seimbang (Balanced) & Real-time Terintegrasi Bendahara</span>
-                          </div>
-                          <button
-                            onClick={() => window.print()}
-                            className="px-2.5 py-1 text-[10px] font-bold text-[#1B365D] hover:text-[#C5A059] border border-gray-300 rounded hover:bg-white transition-all flex items-center gap-1 cursor-pointer"
-                          >
-                            <Printer size={12} /> Cetak Laporan
-                          </button>
-                        </div>
-                      </div>
-
-                      <FinancialSheet currentRole={currentRole} />
-
-                      <div className="border border-[#E5E0D5] p-5 rounded-2xl bg-white text-left">
-                        <h4 className="font-serif font-bold text-[#1B365D] text-base mb-3">Kop Surat Dinas Ketua</h4>
-                        <KopSurat config={orgConfig} userRole="KETUA" />
-                      </div>
+                {currentRole === UserRole.KETUA && (
+                  <div className="space-y-8">
+                    <LaporanNeraca currentRole={currentRole} txs={txs} neraca={neraca} />
+                    <FinancialSheet currentRole={currentRole} />
+                    <div className="border border-[#E5E0D5] p-5 rounded-2xl bg-white text-left">
+                      <h4 className="font-serif font-bold text-[#1B365D] text-base mb-3">Kop Surat Dinas Ketua</h4>
+                      <KopSurat config={orgConfig} userRole="KETUA" />
                     </div>
-                  );
-                })()}
+                  </div>
+                )}
 
               </div>
             )}

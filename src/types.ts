@@ -177,3 +177,26 @@ export interface StructureItem {
   photoUrl?: string; // photo base64/url
   urutan: number; // custom sorting
 }
+
+export interface BalanceSheetData {
+  piutangAnggota: number;
+  uangMukaPanjar: number;
+  lainLainAktivaLancar: number;
+  lainLainAktivaLancarKet: string;
+  
+  peralatanKantor: number;
+  akumulasiPenyusutan: number; // usually entered as positive and subtracted
+  lainLainAktivaTetap: number;
+  lainLainAktivaTetapKet: string;
+
+  hutangOperasional: number;
+  kewajibanLainnya: number;
+  lainLainLiabilitas: number;
+  lainLainLiabilitasKet: string;
+
+  modalCadangan: number;
+  surplusDefisit: number;
+  lainLainEkuitas: number;
+  lainLainEkuitasKet: string;
+}
+

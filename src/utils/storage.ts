@@ -1,4 +1,4 @@
-import { Member, OrgConfig, FinancialTransaction, VisitorLog, HomepageContent, UserRole, JenisKelamin, Agama, TransaksiKategori, SumberDana } from '../types';
+import { Member, OrgConfig, FinancialTransaction, VisitorLog, HomepageContent, UserRole, JenisKelamin, Agama, TransaksiKategori, SumberDana, BalanceSheetData } from '../types';
 
 const INITIAL_MEMBERS: Member[] = [
   {
@@ -128,6 +128,28 @@ const IPPI_LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 
 </svg>`;
 
 const IPPI_LOGO_DATA_URL = `data:image/svg+xml;utf8,${encodeURIComponent(IPPI_LOGO_SVG)}`;
+
+export const INITIAL_NERACA: BalanceSheetData = {
+  piutangAnggota: 0,
+  uangMukaPanjar: 0,
+  lainLainAktivaLancar: 0,
+  lainLainAktivaLancarKet: '',
+  
+  peralatanKantor: 0,
+  akumulasiPenyusutan: 0,
+  lainLainAktivaTetap: 0,
+  lainLainAktivaTetapKet: '',
+
+  hutangOperasional: 0,
+  kewajibanLainnya: 0,
+  lainLainLiabilitas: 0,
+  lainLainLiabilitasKet: '',
+
+  modalCadangan: 0,
+  surplusDefisit: 0,
+  lainLainEkuitas: 0,
+  lainLainEkuitasKet: ''
+};
 
 const INITIAL_CONFIG: OrgConfig = {
   logoText: 'IPPI',
@@ -601,6 +623,23 @@ export function initializeFirestoreSync() {
     handleFirestoreError(error, OperationType.GET, 'transactions');
   });
 
+  // 4b. Neraca Sync
+  onSnapshot(doc(db, 'config', 'neraca'), async (snapshot) => {
+    if (!snapshot.exists()) {
+      try {
+        await setDoc(doc(db, 'config', 'neraca'), INITIAL_NERACA);
+      } catch (error) {
+        handleFirestoreError(error, OperationType.WRITE, 'config/neraca');
+      }
+    } else {
+      const data = snapshot.data() as BalanceSheetData;
+      localStorage.setItem('ippi_neraca', JSON.stringify(data));
+      notifyListeners();
+    }
+  }, (error) => {
+    handleFirestoreError(error, OperationType.GET, 'config/neraca');
+  });
+
   // 5. Visitors Sync
   onSnapshot(collection(db, 'visitors'), async (snapshot) => {
     if (snapshot.empty) {
@@ -857,4 +896,23 @@ export function logVisitorAction(nama: string, email: string, role: UserRole, ac
   logs.unshift(newLog); // Put latest on top
   saveStoredVisitors(logs);
 }
+
+export function getStoredNeraca(): BalanceSheetData {
+  const data = localStorage.getItem('ippi_neraca');
+  if (!data) {
+    localStorage.setItem('ippi_neraca', JSON.stringify(INITIAL_NERACA));
+    return INITIAL_NERACA;
+  }
+  return JSON.parse(data);
+}
+
+export function saveStoredNeraca(neraca: BalanceSheetData) {
+  localStorage.setItem('ippi_neraca', JSON.stringify(neraca));
+  setDoc(doc(db, 'config', 'neraca'), neraca).then(() => {
+    window.dispatchEvent(new Event('ippi_storage_updated'));
+  }).catch((err) => {
+    handleFirestoreError(err, OperationType.WRITE, 'config/neraca');
+  });
+}
+
 
