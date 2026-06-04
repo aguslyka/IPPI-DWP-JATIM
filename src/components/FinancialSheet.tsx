@@ -177,7 +177,7 @@ export default function FinancialSheet({ currentRole }: FinancialSheetProps) {
       let waText = '';
       if (kategori === TransaksiKategori.MASUK) {
         phoneNum = linkedMember ? linkedMember.noTelp : '081803100222';
-        waText = `Yth. Anggota IPPI, Terima kasih pembayaran Iuran Anda sebesar Rp ${jumlah.toLocaleString('id-ID')} telah kami verifikasi masuk ke kas keuangan IPPI pada tanggal ${tanggal}. Semoga berkah dan sehat selalu! - Bendahara IPPI`;
+        waText = `Yth. Anggota IPPI, Terima kasih pembayaran Iuran Anda sebesar Rp ${jumlah.toLocaleString('id-ID')} telah kami verifikasi masuk ke kas keuangan IPPI pada tanggal ${tanggal}. Semoga berkah dan sehat selalu! - Bendahara IPPI (jangan lupa selau update di web : https://dpwsppijatim.cekdiribk.id)`;
       } else {
         waText = `Pemberitahuan IPPI: Pengeluaran dana SPJ dengan perihal "${deskripsi}" sebesar Rp ${jumlah.toLocaleString('id-ID')} telah dicairkan dan ditransfer ke rekening ${noRekening} pada tanggal ${tanggal}. Harap simpan nota lunas Anda. Terima kasih. - Bendahara IPPI`;
       }
