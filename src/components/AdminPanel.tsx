@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { OrgConfig, Member, VisitorLog, UserRole, JenisKelamin, Agama, HomepageContent } from '../types';
 import { getStoredConfig, saveStoredConfig, getStoredMembers, saveStoredMembers, getStoredVisitors, saveStoredVisitors, logVisitorAction, getStoredContent, saveStoredContent } from '../utils/storage';
-import { Settings, Users, History, Check, Shield, Trash2, Edit2, Plus, RefreshCw, X, Image } from 'lucide-react';
+import { Settings, Users, History, Check, Shield, Trash2, Edit2, Plus, RefreshCw, X, Image, Paperclip, FileText, Facebook, Instagram, Youtube } from 'lucide-react';
 import AboutEditor from './editors/AboutEditor';
 import ProgramEditor from './editors/ProgramEditor';
 import BeritaEditor from './editors/BeritaEditor';
@@ -61,6 +61,10 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
   const [newKegImage, setNewKegImage] = useState('');
   const [newKegIsVideo, setNewKegIsVideo] = useState(false);
   const [newKegVideoUrl, setNewKegVideoUrl] = useState('');
+  const [newKegFileState, setNewKegFileState] = useState<{ name: string; type: string; data: string } | null>(null);
+  const [newKegLinkFacebook, setNewKegLinkFacebook] = useState('');
+  const [newKegLinkInstagram, setNewKegLinkInstagram] = useState('');
+  const [newKegLinkYoutube, setNewKegLinkYoutube] = useState('');
 
   const [editingKegId, setEditingKegId] = useState<string | null>(null);
   const [editKegJudul, setEditKegJudul] = useState('');
@@ -69,6 +73,10 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
   const [editKegImage, setEditKegImage] = useState('');
   const [editKegIsVideo, setEditKegIsVideo] = useState(false);
   const [editKegVideoUrl, setEditKegVideoUrl] = useState('');
+  const [editKegFileState, setEditKegFileState] = useState<{ name: string; type: string; data: string } | null>(null);
+  const [editKegLinkFacebook, setEditKegLinkFacebook] = useState('');
+  const [editKegLinkInstagram, setEditKegLinkInstagram] = useState('');
+  const [editKegLinkYoutube, setEditKegLinkYoutube] = useState('');
 
   // Organizational Structure states for Admin
   const [isAddStrOpen, setIsAddStrOpen] = useState(false);
@@ -88,11 +96,21 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
   const [newFokusJudul, setNewFokusJudul] = useState('');
   const [newFokusDesc, setNewFokusDesc] = useState('');
   const [newFokusUrutan, setNewFokusUrutan] = useState<number | ''>('');
+  const [newFokusFileState, setNewFokusFileState] = useState<{ name: string; type: string; data: string } | null>(null);
+  const [newFokusLinkFacebook, setNewFokusLinkFacebook] = useState('');
+  const [newFokusLinkInstagram, setNewFokusLinkInstagram] = useState('');
+  const [newFokusLinkYoutube, setNewFokusLinkYoutube] = useState('');
 
   const [editingFokusId, setEditingFokusId] = useState<string | null>(null);
   const [editFokusJudul, setEditFokusJudul] = useState('');
   const [editFokusDesc, setEditFokusDesc] = useState('');
   const [editFokusUrutan, setEditFokusUrutan] = useState<number | ''>('');
+  const [editFokusFileState, setEditFokusFileState] = useState<{ name: string; type: string; data: string } | null>(null);
+  const [editFokusLinkFacebook, setEditFokusLinkFacebook] = useState('');
+  const [editFokusLinkInstagram, setEditFokusLinkInstagram] = useState('');
+  const [editFokusLinkYoutube, setEditFokusLinkYoutube] = useState('');
+
+  const [previewAdminFile, setPreviewAdminFile] = useState<{ name: string; type: string; data: string } | null>(null);
 
   useEffect(() => {
     const handleReload = () => {
@@ -111,6 +129,28 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
   const triggerFeedback = (status: 'ok' | 'error', msg: string) => {
     setFeedback({ status, msg });
     setTimeout(() => setFeedback(null), 5000);
+  };
+
+  const handleAdminFileChange = (e: React.ChangeEvent<HTMLInputElement>, setter: (s: { name: string; type: string; data: string } | null) => void) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Ukuran berkas maksimal adalah 5MB untuk kestabilan penyimpanan database.');
+      e.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64Data = reader.result as string;
+      setter({
+        name: file.name,
+        type: file.type,
+        data: base64Data
+      });
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleAddStruktur = () => {
@@ -217,7 +257,13 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
       isVideo: newKegIsVideo,
       judul: newKegJudul,
       deskripsi: newKegDesc,
-      tanggal: newKegTanggal
+      tanggal: newKegTanggal,
+      fileName: newKegFileState?.name,
+      fileType: newKegFileState?.type,
+      fileData: newKegFileState?.data,
+      linkFacebook: newKegLinkFacebook.trim() || undefined,
+      linkInstagram: newKegLinkInstagram.trim() || undefined,
+      linkYoutube: newKegLinkYoutube.trim() || undefined
     };
     const updated = {
       ...homeContent,
@@ -234,6 +280,10 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
     setNewKegImage('');
     setNewKegIsVideo(false);
     setNewKegVideoUrl('');
+    setNewKegFileState(null);
+    setNewKegLinkFacebook('');
+    setNewKegLinkInstagram('');
+    setNewKegLinkYoutube('');
     setIsAddKegOpen(false);
     triggerFeedback('ok', 'Sukses: Media kegiatan baru berhasil ditambahkan!');
   };
@@ -246,6 +296,18 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
     setEditKegImage(keg.imageUrl || '');
     setEditKegIsVideo(!!keg.isVideo);
     setEditKegVideoUrl(keg.videoUrl || '');
+    setEditKegLinkFacebook(keg.linkFacebook || '');
+    setEditKegLinkInstagram(keg.linkInstagram || '');
+    setEditKegLinkYoutube(keg.linkYoutube || '');
+    if (keg.fileName && keg.fileData) {
+      setEditKegFileState({
+        name: keg.fileName,
+        type: keg.fileType || '',
+        data: keg.fileData
+      });
+    } else {
+      setEditKegFileState(null);
+    }
   };
 
   const handleSaveEditKeg = () => {
@@ -272,7 +334,13 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
           tanggal: editKegTanggal,
           imageUrl: editKegImage,
           videoUrl: editKegVideoUrl,
-          isVideo: editKegIsVideo
+          isVideo: editKegIsVideo,
+          fileName: editKegFileState?.name,
+          fileType: editKegFileState?.type,
+          fileData: editKegFileState?.data,
+          linkFacebook: editKegLinkFacebook.trim() || undefined,
+          linkInstagram: editKegLinkInstagram.trim() || undefined,
+          linkYoutube: editKegLinkYoutube.trim() || undefined
         };
       }
       return k;
@@ -285,6 +353,10 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
     saveStoredContent(updated);
     if (onContentChange) onContentChange(updated);
     setEditingKegId(null);
+    setEditKegFileState(null);
+    setEditKegLinkFacebook('');
+    setEditKegLinkInstagram('');
+    setEditKegLinkYoutube('');
     triggerFeedback('ok', 'Sukses: Perubahan media kegiatan berhasil disimpan!');
   };
 
@@ -317,7 +389,13 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
       id: `fokus_${Date.now()}`,
       judul: newFokusJudul,
       deskripsi: newFokusDesc,
-      urutan: ord
+      urutan: ord,
+      fileName: newFokusFileState?.name,
+      fileType: newFokusFileState?.type,
+      fileData: newFokusFileState?.data,
+      linkFacebook: newFokusLinkFacebook.trim() || undefined,
+      linkInstagram: newFokusLinkInstagram.trim() || undefined,
+      linkYoutube: newFokusLinkYoutube.trim() || undefined
     };
     const updated = {
       ...homeContent,
@@ -331,6 +409,10 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
     setNewFokusJudul('');
     setNewFokusDesc('');
     setNewFokusUrutan('');
+    setNewFokusFileState(null);
+    setNewFokusLinkFacebook('');
+    setNewFokusLinkInstagram('');
+    setNewFokusLinkYoutube('');
     setIsAddFokusOpen(false);
     triggerFeedback('ok', 'Sukses: Fokus kontribusi baru berhasil ditambahkan!');
   };
@@ -340,6 +422,18 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
     setEditFokusJudul(item.judul);
     setEditFokusDesc(item.deskripsi || '');
     setEditFokusUrutan(item.urutan || '');
+    setEditFokusLinkFacebook(item.linkFacebook || '');
+    setEditFokusLinkInstagram(item.linkInstagram || '');
+    setEditFokusLinkYoutube(item.linkYoutube || '');
+    if (item.fileName && item.fileData) {
+      setEditFokusFileState({
+        name: item.fileName,
+        type: item.fileType || '',
+        data: item.fileData
+      });
+    } else {
+      setEditFokusFileState(null);
+    }
   };
 
   const handleSaveEditFokus = () => {
@@ -356,7 +450,13 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
           ...f,
           judul: editFokusJudul,
           deskripsi: editFokusDesc,
-          urutan: ord
+          urutan: ord,
+          fileName: editFokusFileState?.name,
+          fileType: editFokusFileState?.type,
+          fileData: editFokusFileState?.data,
+          linkFacebook: editFokusLinkFacebook.trim() || undefined,
+          linkInstagram: editFokusLinkInstagram.trim() || undefined,
+          linkYoutube: editFokusLinkYoutube.trim() || undefined
         };
       }
       return f;
@@ -369,6 +469,10 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
     saveStoredContent(updated);
     if (onContentChange) onContentChange(updated);
     setEditingFokusId(null);
+    setEditFokusFileState(null);
+    setEditFokusLinkFacebook('');
+    setEditFokusLinkInstagram('');
+    setEditFokusLinkYoutube('');
     triggerFeedback('ok', 'Sukses: Perubahan fokus kontribusi berhasil disimpan!');
   };
 
@@ -1367,6 +1471,82 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
                     )}
                   </div>
                 </div>
+
+                <div className="border-t border-amber-200/40 pt-3">
+                  <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">Lampiran Berkas Kegiatan (Opsional: PDF, DOC, DOCX, PPT, PPTX)</label>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-1 text-xs">
+                    <input
+                      type="file"
+                      id="new-keg-file"
+                      accept=".pdf,.doc,.docx,.ppt,.pptx"
+                      onChange={(e) => handleAdminFileChange(e, setNewKegFileState)}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="new-keg-file"
+                      className="px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-700 rounded-lg text-xs font-semibold cursor-pointer border border-[#E5E0D5] flex items-center gap-1.5"
+                    >
+                      <Paperclip className="w-3.5 h-3.5" /> Pilih File (.pdf, .doc, .docx, .ppt, .pptx)
+                    </label>
+                    {newKegFileState ? (
+                      <div className="flex items-center gap-2 text-xs bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-1 rounded-lg">
+                        <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                        <span className="font-semibold max-w-[200px] truncate">{newKegFileState.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => setNewKegFileState(null)}
+                          className="text-red-700 hover:text-red-900 font-bold ml-1 text-sm leading-none cursor-pointer"
+                          title="Hapus berkas"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-gray-500 italic">Maksimal 5MB. Dokumen dapat diunduh / dipreview pengunjung.</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* TAUTAN MEDIA SOSIAL KEGIATAN */}
+                <div className="border-t border-amber-200/40 pt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">
+                      <span className="flex items-center gap-1"><Facebook className="w-3.5 h-3.5 text-blue-600 animate-pulse" /> Link Facebook (Opsional)</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={newKegLinkFacebook}
+                      onChange={(e) => setNewKegLinkFacebook(e.target.value)}
+                      placeholder="https://facebook.com/..."
+                      className="w-full bg-white border border-[#E5E0D5] rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">
+                      <span className="flex items-center gap-1"><Instagram className="w-3.5 h-3.5 text-pink-600 animate-pulse" /> Link Instagram (Opsional)</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={newKegLinkInstagram}
+                      onChange={(e) => setNewKegLinkInstagram(e.target.value)}
+                      placeholder="https://instagram.com/..."
+                      className="w-full bg-white border border-[#E5E0D5] rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">
+                      <span className="flex items-center gap-1"><Youtube className="w-3.5 h-3.5 text-red-600 animate-pulse" /> Link YouTube (Opsional)</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={newKegLinkYoutube}
+                      onChange={(e) => setNewKegLinkYoutube(e.target.value)}
+                      placeholder="https://youtube.com/watch?v=..."
+                      className="w-full bg-white border border-[#E5E0D5] rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                    />
+                  </div>
+                </div>
+
                 <div className="pt-2 flex justify-end">
                   <button
                     type="button"
@@ -1477,6 +1657,82 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
                     )}
                   </div>
                 </div>
+
+                <div className="border-t border-amber-200/40 pt-3">
+                  <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">Ganti Lampiran Berkas Kegiatan (Opsional: PDF, DOC, DOCX, PPT, PPTX)</label>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-1 text-xs">
+                    <input
+                      type="file"
+                      id="edit-keg-file"
+                      accept=".pdf,.doc,.docx,.ppt,.pptx"
+                      onChange={(e) => handleAdminFileChange(e, setEditKegFileState)}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="edit-keg-file"
+                      className="px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-700 rounded-lg text-xs font-semibold cursor-pointer border border-[#E5E0D5] flex items-center gap-1.5"
+                    >
+                      <Paperclip className="w-3.5 h-3.5" /> Pilih File (.pdf, .doc, .docx, .ppt, .pptx)
+                    </label>
+                    {editKegFileState ? (
+                      <div className="flex items-center gap-2 text-xs bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-1 rounded-lg">
+                        <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                        <span className="font-semibold max-w-[200px] truncate">{editKegFileState.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => setEditKegFileState(null)}
+                          className="text-red-700 hover:text-red-900 font-bold ml-1 text-sm leading-none cursor-pointer"
+                          title="Hapus berkas"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-gray-500 italic">Maksimal 5MB. Dokumen dapat diunduh / dipreview pengunjung.</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* TAUTAN MEDIA SOSIAL KEGIATAN EDIT */}
+                <div className="border-t border-amber-200/40 pt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">
+                      <span className="flex items-center gap-1"><Facebook className="w-3.5 h-3.5 text-blue-600 animate-pulse" /> Link Facebook (Opsional)</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={editKegLinkFacebook}
+                      onChange={(e) => setEditKegLinkFacebook(e.target.value)}
+                      placeholder="https://facebook.com/..."
+                      className="w-full bg-white border border-[#E5E0D5] rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">
+                      <span className="flex items-center gap-1"><Instagram className="w-3.5 h-3.5 text-pink-600 animate-pulse" /> Link Instagram (Opsional)</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={editKegLinkInstagram}
+                      onChange={(e) => setEditKegLinkInstagram(e.target.value)}
+                      placeholder="https://instagram.com/..."
+                      className="w-full bg-white border border-[#E5E0D5] rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">
+                      <span className="flex items-center gap-1"><Youtube className="w-3.5 h-3.5 text-red-600 animate-pulse" /> Link YouTube (Opsional)</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={editKegLinkYoutube}
+                      onChange={(e) => setEditKegLinkYoutube(e.target.value)}
+                      placeholder="https://youtube.com/watch?v=..."
+                      className="w-full bg-white border border-[#E5E0D5] rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                    />
+                  </div>
+                </div>
+
                 <div className="pt-2 flex justify-end">
                   <button
                     type="button"
@@ -1492,36 +1748,93 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
             {/* List and Grid representation */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {(homeContent.kegiatan || []).map((keg) => (
-                <div key={keg.id} className="border border-[#E5E0D5] rounded-xl p-4 bg-[#FFD]/10 flex space-x-4 items-center">
-                  <div className="w-24 h-16 bg-white border border-[#E5E0D5] rounded-lg overflow-hidden shrink-0">
-                    {keg.imageUrl ? (
-                      <img src={keg.imageUrl} alt={keg.judul} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="text-[10px] text-gray-300 flex items-center justify-center h-full">No Image</div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h5 className="text-xs font-bold text-[#1B365D] truncate">{keg.judul}</h5>
-                    <p className="text-[10px] text-gray-400 truncate">{keg.tanggal || 'Belum diatur tanggal'}</p>
-                    <p className="text-[10px] text-gray-500 truncate">{keg.deskripsi}</p>
-                    <div className="mt-2 flex space-x-3">
-                      <button
-                        type="button"
-                        onClick={() => handleStartEditKeg(keg)}
-                        className="text-[10px] text-blue-600 hover:underline font-bold"
-                        disabled={!!editingKegId || isAddKegOpen}
-                      >
-                        ✏️ Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteKeg(keg.id, keg.judul)}
-                        className="text-[10px] text-red-600 hover:underline font-bold"
-                        disabled={!!editingKegId || isAddKegOpen}
-                      >
-                        🗑️ Hapus
-                      </button>
+                <div key={keg.id} className="border border-[#E5E0D5] rounded-xl p-4 bg-[#FFD]/10 flex flex-col space-y-3">
+                  <div className="flex space-x-4 items-center w-full">
+                    <div className="w-24 h-16 bg-white border border-[#E5E0D5] rounded-lg overflow-hidden shrink-0">
+                      {keg.imageUrl ? (
+                        <img src={keg.imageUrl} alt={keg.judul} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="text-[10px] text-gray-300 flex items-center justify-center h-full">No Image</div>
+                      )}
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <h5 className="text-xs font-bold text-[#1B365D] truncate">{keg.judul}</h5>
+                      <p className="text-[10px] text-gray-400 truncate">{keg.tanggal || 'Belum diatur tanggal'}</p>
+                      <p className="text-[10px] text-gray-500 line-clamp-2 leading-relaxed">{keg.deskripsi}</p>
+                    </div>
+                  </div>
+
+                  {/* LAMPIRAN & TAUTAN EKSTERNAL */}
+                  <div className="bg-gray-50/50 rounded-lg p-2 border border-gray-100 flex flex-col gap-1.5 w-full text-[11px]">
+                    {keg.fileName ? (
+                      <div className="flex items-center justify-between text-gray-700 bg-white p-1 rounded border border-gray-200">
+                        <span className="flex items-center gap-1 font-mono truncate max-w-[180px]">
+                          <FileText className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                          {keg.fileName}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {keg.fileType?.includes('pdf') && (
+                            <button
+                              type="button"
+                              onClick={() => setPreviewAdminFile({ name: keg.fileName || '', type: keg.fileType || '', data: keg.fileData || '' })}
+                              className="text-[10px] font-bold text-[#1B365D] hover:underline"
+                            >
+                              Pratinjau
+                            </button>
+                          )}
+                          <a
+                            href={keg.fileData}
+                            download={keg.fileName}
+                            className="text-[10px] font-bold text-emerald-700 hover:underline"
+                          >
+                            Unduh
+                          </a>
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-gray-400 italic">Tidak ada lampiran dokumen</span>
+                    )}
+
+                    {/* Social links row */}
+                    {(keg.linkFacebook || keg.linkInstagram || keg.linkYoutube) ? (
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[10px] text-gray-400">Media Eksternal:</span>
+                        {keg.linkFacebook && (
+                          <a href={keg.linkFacebook} target="_blank" rel="noopener noreferrer" className="p-1 hover:bg-gray-100 rounded text-blue-600" title="Facebook">
+                            <Facebook className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+                        {keg.linkInstagram && (
+                          <a href={keg.linkInstagram} target="_blank" rel="noopener noreferrer" className="p-1 hover:bg-gray-100 rounded text-pink-600" title="Instagram">
+                            <Instagram className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+                        {keg.linkYoutube && (
+                          <a href={keg.linkYoutube} target="_blank" rel="noopener noreferrer" className="p-1 hover:bg-gray-100 rounded text-red-600" title="YouTube">
+                            <Youtube className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div className="flex space-x-3 border-t border-gray-100 pt-2 justify-end w-full">
+                    <button
+                      type="button"
+                      onClick={() => handleStartEditKeg(keg)}
+                      className="text-[10px] text-blue-600 hover:underline font-bold"
+                      disabled={!!editingKegId || isAddKegOpen}
+                    >
+                      ✏️ Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteKeg(keg.id, keg.judul)}
+                      className="text-[10px] text-red-600 hover:underline font-bold"
+                      disabled={!!editingKegId || isAddKegOpen}
+                    >
+                      🗑️ Hapus
+                    </button>
                   </div>
                 </div>
               ))}
@@ -1913,6 +2226,82 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
                   />
                 </div>
               </div>
+
+              <div className="border-t border-[#E5E0D5]/70 pt-3">
+                <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">Lampiran Berkas (Opsional: PDF, DOC, DOCX, PPT, PPTX)</label>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-1 text-xs">
+                  <input
+                    type="file"
+                    id="new-fokus-file"
+                    accept=".pdf,.doc,.docx,.ppt,.pptx"
+                    onChange={(e) => handleAdminFileChange(e, setNewFokusFileState)}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="new-fokus-file"
+                    className="px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-700 rounded-lg text-xs font-semibold cursor-pointer border border-[#E5E0D5] flex items-center gap-1.5"
+                  >
+                    <Paperclip className="w-3.5 h-3.5" /> Pilih File (.pdf, .doc, .docx, .ppt, .pptx)
+                  </label>
+                  {newFokusFileState ? (
+                    <div className="flex items-center gap-2 text-xs bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-1 rounded-lg">
+                      <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                      <span className="font-semibold max-w-[200px] truncate">{newFokusFileState.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => setNewFokusFileState(null)}
+                        className="text-red-700 hover:text-red-900 font-bold ml-1 text-sm leading-none cursor-pointer"
+                        title="Hapus berkas"
+                      >
+                        &times;
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-[10px] text-gray-500 italic">Maksimal 5MB. Dokumen dapat diunduh / dipreview pengunjung.</span>
+                  )}
+                </div>
+              </div>
+
+              {/* TAUTAN MEDIA SOSIAL FOKUS KONTRIBUSI */}
+              <div className="border-t border-[#E5E0D5]/70 pt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">
+                    <span className="flex items-center gap-1"><Facebook className="w-3.5 h-3.5 text-blue-600 animate-pulse" /> Link Facebook (Opsional)</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={newFokusLinkFacebook}
+                    onChange={(e) => setNewFokusLinkFacebook(e.target.value)}
+                    placeholder="https://facebook.com/..."
+                    className="w-full bg-white border border-[#E5E0D5] rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">
+                    <span className="flex items-center gap-1"><Instagram className="w-3.5 h-3.5 text-pink-600 animate-pulse" /> Link Instagram (Opsional)</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={newFokusLinkInstagram}
+                    onChange={(e) => setNewFokusLinkInstagram(e.target.value)}
+                    placeholder="https://instagram.com/..."
+                    className="w-full bg-white border border-[#E5E0D5] rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">
+                    <span className="flex items-center gap-1"><Youtube className="w-3.5 h-3.5 text-red-600 animate-pulse" /> Link YouTube (Opsional)</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={newFokusLinkYoutube}
+                    onChange={(e) => setNewFokusLinkYoutube(e.target.value)}
+                    placeholder="https://youtube.com/watch?v=..."
+                    className="w-full bg-white border border-[#E5E0D5] rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                  />
+                </div>
+              </div>
+
               <div className="pt-2 flex justify-end">
                 <button
                   type="button"
@@ -1972,6 +2361,82 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
                   />
                 </div>
               </div>
+
+              <div className="border-t border-[#E5E0D5]/70 pt-3">
+                <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">Ganti Lampiran Berkas (Opsional: PDF, DOC, DOCX, PPT, PPTX)</label>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-1 text-xs">
+                  <input
+                    type="file"
+                    id="edit-fokus-file"
+                    accept=".pdf,.doc,.docx,.ppt,.pptx"
+                    onChange={(e) => handleAdminFileChange(e, setEditFokusFileState)}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="edit-fokus-file"
+                    className="px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-700 rounded-lg text-xs font-semibold cursor-pointer border border-[#E5E0D5] flex items-center gap-1.5"
+                  >
+                    <Paperclip className="w-3.5 h-3.5" /> Pilih File (.pdf, .doc, .docx, .ppt, .pptx)
+                  </label>
+                  {editFokusFileState ? (
+                    <div className="flex items-center gap-2 text-xs bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-1 rounded-lg">
+                      <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                      <span className="font-semibold max-w-[200px] truncate">{editFokusFileState.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => setEditFokusFileState(null)}
+                        className="text-red-700 hover:text-red-900 font-bold ml-1 text-sm leading-none cursor-pointer"
+                        title="Hapus berkas"
+                      >
+                        &times;
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-[10px] text-gray-500 italic">Maksimal 5MB. Dokumen dapat diunduh / dipreview pengunjung.</span>
+                  )}
+                </div>
+              </div>
+
+              {/* TAUTAN MEDIA SOSIAL FOKUS KONTRIBUSI EDIT */}
+              <div className="border-t border-[#E5E0D5]/70 pt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">
+                    <span className="flex items-center gap-1"><Facebook className="w-3.5 h-3.5 text-blue-600 animate-pulse" /> Link Facebook (Opsional)</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={editFokusLinkFacebook}
+                    onChange={(e) => setEditFokusLinkFacebook(e.target.value)}
+                    placeholder="https://facebook.com/..."
+                    className="w-full bg-white border border-[#E5E0D5] rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">
+                    <span className="flex items-center gap-1"><Instagram className="w-3.5 h-3.5 text-pink-600 animate-pulse" /> Link Instagram (Opsional)</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={editFokusLinkInstagram}
+                    onChange={(e) => setEditFokusLinkInstagram(e.target.value)}
+                    placeholder="https://instagram.com/..."
+                    className="w-full bg-white border border-[#E5E0D5] rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">
+                    <span className="flex items-center gap-1"><Youtube className="w-3.5 h-3.5 text-red-600 animate-pulse" /> Link YouTube (Opsional)</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={editFokusLinkYoutube}
+                    onChange={(e) => setEditFokusLinkYoutube(e.target.value)}
+                    placeholder="https://youtube.com/watch?v=..."
+                    className="w-full bg-white border border-[#E5E0D5] rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                  />
+                </div>
+              </div>
+
               <div className="pt-2 flex justify-end">
                 <button
                   type="button"
@@ -1997,7 +2462,7 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
                       <button
                         type="button"
                         onClick={() => handleStartEditFokus(item)}
-                        className="p-1.5 text-[#1B365D] hover:bg-gray-100 rounded-lg text-[10px] font-semibold uppercase"
+                        className="p-1.5 text-[#1B365D] hover:bg-gray-100 rounded-lg text-[10px] font-semibold uppercase font-mono"
                         title="Edit data pilar"
                       >
                         Edit
@@ -2005,7 +2470,7 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
                       <button
                         type="button"
                         onClick={() => handleDeleteFokus(item.id, item.judul)}
-                        className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg text-[10px] font-semibold uppercase"
+                        className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg text-[10px] font-semibold uppercase font-mono"
                         title="Hapus pilar"
                       >
                         Hapus
@@ -2014,6 +2479,60 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
                   </div>
                   <h4 className="font-serif font-bold text-[#1B365D] text-sm mt-3">{item.judul}</h4>
                   <p className="text-[11px] text-gray-500 leading-relaxed mt-1">{item.deskripsi}</p>
+                </div>
+
+                {/* FILE ATTACHMENTS & EXTERNAL SOCIAL LINKS FOR FOKUS KONTRIBUSI */}
+                <div className="bg-gray-50 rounded-xl p-2.5 border border-gray-100 space-y-1.5 mt-3 text-[11px]">
+                  {item.fileName ? (
+                    <div className="flex items-center justify-between text-gray-700 bg-white p-1 rounded border border-gray-200">
+                      <span className="flex items-center gap-1 font-mono truncate max-w-[150px]">
+                        <FileText className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                        {item.fileName}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {item.fileType?.includes('pdf') && (
+                          <button
+                            type="button"
+                            onClick={() => setPreviewAdminFile({ name: item.fileName || '', type: item.fileType || '', data: item.fileData || '' })}
+                            className="text-[10px] font-bold text-[#1B365D] hover:underline"
+                          >
+                            Pratinjau
+                          </button>
+                        )}
+                        <a
+                          href={item.fileData}
+                          download={item.fileName}
+                          className="text-[10px] font-bold text-emerald-700 hover:underline"
+                        >
+                          Unduh
+                        </a>
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="text-[10px] text-gray-400 italic">Tidak ada lampiran dokumen</span>
+                  )}
+
+                  {/* Social icons row */}
+                  {(item.linkFacebook || item.linkInstagram || item.linkYoutube) ? (
+                    <div className="flex items-center gap-1.5 pt-1 border-t border-gray-100">
+                      <span className="text-[9px] text-gray-400">Media:</span>
+                      {item.linkFacebook && (
+                        <a href={item.linkFacebook} target="_blank" rel="noopener noreferrer" className="p-0.5 hover:bg-gray-100 rounded text-blue-600" title="Facebook">
+                          <Facebook className="w-3 h-3" />
+                        </a>
+                      )}
+                      {item.linkInstagram && (
+                        <a href={item.linkInstagram} target="_blank" rel="noopener noreferrer" className="p-0.5 hover:bg-gray-100 rounded text-pink-600" title="Instagram">
+                          <Instagram className="w-3 h-3" />
+                        </a>
+                      )}
+                      {item.linkYoutube && (
+                        <a href={item.linkYoutube} target="_blank" rel="noopener noreferrer" className="p-0.5 hover:bg-gray-100 rounded text-red-600" title="YouTube">
+                          <Youtube className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
+                  ) : null}
                 </div>
               </div>
             ))}
@@ -2042,6 +2561,68 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
               setTimeout(() => setFeedback(null), 4000);
             }}
           />
+        </div>
+      )}
+
+      {/* PDF PRATINJAU MODAL */}
+      {previewAdminFile && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl w-full max-w-4xl h-[85vh] flex flex-col shadow-2xl overflow-hidden border border-gray-200 animate-fade-in text-left">
+            <div className="bg-[#1B365D] text-white px-5 py-3.5 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-amber-400" />
+                <div>
+                  <h3 className="text-xs font-bold font-mono truncate max-w-[400px] leading-tight">{previewAdminFile.name}</h3>
+                  <p className="text-[9px] text-[#A2B4D0]">Pratinjau Dokumen Lampiran Resmi</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewAdminFile(null)}
+                className="text-white hover:text-amber-400 transition-colors font-bold text-xl cursor-pointer leading-none px-2"
+                title="Tutup Pratinjau"
+              >
+                &times;
+              </button>
+            </div>
+            <div className="flex-1 bg-gray-100 p-2 flex items-center justify-center overflow-auto">
+              {previewAdminFile.type.includes('pdf') || previewAdminFile.name.toLowerCase().endsWith('.pdf') ? (
+                <iframe
+                  src={previewAdminFile.data}
+                  title="PDF Preview"
+                  className="w-full h-full rounded border-0 bg-white"
+                />
+              ) : (
+                <div className="text-center p-6 space-y-3">
+                  <FileText className="w-16 h-16 text-gray-400 mx-auto" />
+                  <p className="text-xs text-gray-500 font-semibold font-mono">Format dokumen ini tidak mendukung pratinjau langsung.</p>
+                  <a
+                    href={previewAdminFile.data}
+                    download={previewAdminFile.name}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition"
+                  >
+                    Unduh Dokumen Berkas
+                  </a>
+                </div>
+              )}
+            </div>
+            <div className="bg-gray-50 px-5 py-3 border-t border-gray-100 flex justify-end gap-3">
+              <a
+                href={previewAdminFile.data}
+                download={previewAdminFile.name}
+                className="px-4 py-1.5 bg-emerald-600 text-white hover:bg-emerald-700 rounded-xl text-xs font-bold transition flex items-center gap-1"
+              >
+                Unduh Berkas
+              </a>
+              <button
+                type="button"
+                onClick={() => setPreviewAdminFile(null)}
+                className="px-4 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl text-xs font-bold transition cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -33,7 +33,14 @@ import {
   Minimize2,
   Eye,
   Settings,
-  Printer
+  Printer,
+  FileText,
+  Download,
+  X,
+  Paperclip,
+  Facebook,
+  Instagram,
+  Youtube
 } from 'lucide-react';
 
 function getEmbedUrl(url: string | undefined): string {
@@ -75,6 +82,7 @@ export default function App() {
   // Trigger modals
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [activePreviewDoc, setActivePreviewDoc] = useState<{ name: string; type: string; data: string } | null>(null);
 
   // Member editing form profile (Akses Anggota) No Telp, Email, Alamat
   const [memberPhone, setMemberPhone] = useState('');
@@ -626,6 +634,59 @@ export default function App() {
                             {keg.deskripsi && (
                               <p className="text-xs text-[#5D574F] mt-2 leading-relaxed">{keg.deskripsi}</p>
                             )}
+
+                            {/* FILES DOWNLOAD & SOCIAL BUTTONS LINK */}
+                            <div className="border-t border-gray-100 pt-3 flex flex-col gap-2 w-full mt-3 text-xs">
+                              {keg.fileName && keg.fileData ? (
+                                <div className="flex items-center justify-between text-[11px] text-gray-700 bg-gray-50 p-2 rounded-lg border border-gray-100">
+                                  <span className="flex items-center gap-1 font-mono truncate max-w-[130px]" title={keg.fileName}>
+                                    <FileText className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                                    {keg.fileName}
+                                  </span>
+                                  <div className="flex items-center gap-2 shrink-0 font-bold">
+                                    {(keg.fileType?.includes('pdf') || keg.fileName.toLowerCase().endsWith('.pdf')) && (
+                                      <button
+                                        type="button"
+                                        onClick={() => setActivePreviewDoc({ name: keg.fileName || '', type: keg.fileType || '', data: keg.fileData || '' })}
+                                        className="text-[10px] text-[#1B365D] hover:underline cursor-pointer"
+                                      >
+                                        Pratinjau
+                                      </button>
+                                    )}
+                                    <a
+                                      href={keg.fileData}
+                                      download={keg.fileName}
+                                      className="text-[10px] text-emerald-700 hover:underline cursor-pointer"
+                                    >
+                                      Unduh
+                                    </a>
+                                  </div>
+                                </div>
+                              ) : null}
+
+                              {(keg.linkFacebook || keg.linkInstagram || keg.linkYoutube) ? (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[10px] text-gray-400">Media Kabar:</span>
+                                  <div className="flex items-center gap-1.5">
+                                    {keg.linkFacebook && (
+                                      <a href={keg.linkFacebook} target="_blank" rel="noopener noreferrer" className="p-1 hover:bg-gray-100 rounded text-blue-600" title="Facebook Kegiatan">
+                                        <Facebook className="w-3.5 h-3.5" />
+                                      </a>
+                                    )}
+                                    {keg.linkInstagram && (
+                                      <a href={keg.linkInstagram} target="_blank" rel="noopener noreferrer" className="p-1 hover:bg-gray-100 rounded text-pink-600" title="Instagram Kegiatan">
+                                        <Instagram className="w-3.5 h-3.5" />
+                                      </a>
+                                    )}
+                                    {keg.linkYoutube && (
+                                      <a href={keg.linkYoutube} target="_blank" rel="noopener noreferrer" className="p-1 hover:bg-gray-100 rounded text-red-600" title="Video Kegiatan (YouTube)">
+                                        <Youtube className="w-3.5 h-3.5" />
+                                      </a>
+                                    )}
+                                  </div>
+                                </div>
+                              ) : null}
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -713,14 +774,69 @@ export default function App() {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {(homeContent.fokusList || []).sort((a,b) => (a.urutan || 0) - (b.urutan || 0)).map((item, index) => (
-                      <div key={item.id} className="bg-white border border-[#E5E0D5] p-5 rounded-2xl text-left space-y-3 relative overflow-hidden group hover:shadow-xs transition-all">
-                        <div className="w-10 h-10 bg-[#1B365D]/5 text-[#1B365D] rounded-xl flex items-center justify-center font-bold">
-                          {item.urutan || (index + 1)}
+                      <div key={item.id} className="bg-white border border-[#E5E0D5] p-5 rounded-2xl text-left space-y-3 relative overflow-hidden group hover:shadow-md transition-all flex flex-col justify-between">
+                        <div className="space-y-3">
+                          <div className="w-10 h-10 bg-[#1B365D]/5 text-[#1B365D] rounded-xl flex items-center justify-center font-bold">
+                            {item.urutan || (index + 1)}
+                          </div>
+                          <h4 className="font-serif font-bold text-[#1B365D]">{item.judul}</h4>
+                          <p className="text-xs text-gray-500 leading-relaxed">
+                            {item.deskripsi}
+                          </p>
                         </div>
-                        <h4 className="font-serif font-bold text-[#1B365D]">{item.judul}</h4>
-                        <p className="text-xs text-gray-500 leading-relaxed">
-                          {item.deskripsi}
-                        </p>
+
+                        {/* LAMPIRAN TEKS & TAUTAN MEDIA SOSIAL */}
+                        <div className="border-t border-gray-100 pt-3 flex flex-col gap-2 mt-2">
+                          {item.fileName && item.fileData ? (
+                            <div className="flex items-center justify-between text-[11px] text-gray-700 bg-gray-50 p-2 rounded-lg border border-gray-100">
+                              <span className="flex items-center gap-1 font-mono truncate max-w-[130px]" title={item.fileName}>
+                                <FileText className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                                {item.fileName}
+                              </span>
+                              <div className="flex items-center gap-2 shrink-0 font-bold">
+                                {(item.fileType?.includes('pdf') || item.fileName.toLowerCase().endsWith('.pdf')) && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setActivePreviewDoc({ name: item.fileName || '', type: item.fileType || '', data: item.fileData || '' })}
+                                    className="text-[10px] text-[#1B365D] hover:underline cursor-pointer"
+                                  >
+                                    Pratinjau
+                                  </button>
+                                )}
+                                <a
+                                  href={item.fileData}
+                                  download={item.fileName}
+                                  className="text-[10px] text-emerald-700 hover:underline cursor-pointer"
+                                >
+                                  Unduh
+                                </a>
+                              </div>
+                            </div>
+                          ) : null}
+
+                          {(item.linkFacebook || item.linkInstagram || item.linkYoutube) ? (
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] text-gray-400">Media Resmi:</span>
+                              <div className="flex items-center gap-1.5">
+                                {item.linkFacebook && (
+                                  <a href={item.linkFacebook} target="_blank" rel="noopener noreferrer" className="p-1 hover:bg-gray-100 rounded text-blue-600" title="Facebook Resmi">
+                                    <Facebook className="w-3.5 h-3.5" />
+                                  </a>
+                                )}
+                                {item.linkInstagram && (
+                                  <a href={item.linkInstagram} target="_blank" rel="noopener noreferrer" className="p-1 hover:bg-gray-100 rounded text-pink-600" title="Instagram Resmi">
+                                    <Instagram className="w-3.5 h-3.5" />
+                                  </a>
+                                )}
+                                {item.linkYoutube && (
+                                  <a href={item.linkYoutube} target="_blank" rel="noopener noreferrer" className="p-1 hover:bg-gray-100 rounded text-red-600" title="Saluran YouTube">
+                                    <Youtube className="w-3.5 h-3.5" />
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          ) : null}
+                        </div>
                       </div>
                     ))}
                     {(homeContent.fokusList || []).length === 0 && (
@@ -972,6 +1088,81 @@ export default function App() {
                         <p className={`text-xs leading-relaxed ${prog.isHighlighted ? 'text-slate-300' : 'text-gray-500'}`}>
                           {prog.deskripsi}
                         </p>
+
+                        {prog.fileName && prog.fileData && (
+                          <div className={`mt-3 flex items-center justify-between p-2 rounded-lg text-xs ${
+                            prog.isHighlighted ? 'bg-white/10 text-slate-100' : 'bg-gray-100 border border-gray-150 text-gray-700'
+                          }`}>
+                            <div className="flex items-center gap-1.5 min-w-0 pr-1">
+                              <FileText className="w-3.5 h-3.5 shrink-0 text-[#C5A059]" />
+                              <span className="font-semibold truncate text-[10px]" title={prog.fileName}>{prog.fileName}</span>
+                            </div>
+                            <div className="flex gap-1.5 shrink-0">
+                              {(prog.fileType?.includes('pdf') || prog.fileData.startsWith('data:application/pdf')) && (
+                                <button
+                                  type="button"
+                                  onClick={() => setActivePreviewDoc({ name: prog.fileName!, type: prog.fileType!, data: prog.fileData! })}
+                                  className={`text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 hover:opacity-85 cursor-pointer ${
+                                    prog.isHighlighted ? 'text-[#C5A059] bg-white/10' : 'text-blue-700 bg-blue-50 border border-blue-150'
+                                  }`}
+                                >
+                                  <Eye className="w-2.5 h-2.5" /> Lihat
+                                </button>
+                              )}
+                              <a
+                                href={prog.fileData}
+                                download={prog.fileName}
+                                className={`text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 hover:opacity-85 cursor-pointer ${
+                                  prog.isHighlighted ? 'text-white bg-[#C5A059]' : 'text-emerald-700 bg-emerald-50 border border-emerald-150'
+                                }`}
+                              >
+                                <Download className="w-2.5 h-2.5" /> Unduh
+                              </a>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Media & Social Links */}
+                        {(prog.linkFacebook || prog.linkInstagram || prog.linkYoutube) && (
+                          <div className="mt-3 flex flex-wrap gap-1.5 pt-1 select-none">
+                            {prog.linkFacebook && (
+                              <a
+                                href={prog.linkFacebook}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`text-[9px] font-bold px-2 py-1 rounded-lg flex items-center gap-1 hover:opacity-85 cursor-pointer transition-opacity ${
+                                  prog.isHighlighted ? 'bg-blue-600/20 text-blue-200 border border-blue-500/25' : 'bg-blue-50 text-blue-800 border border-blue-150'
+                                }`}
+                              >
+                                <Facebook className="w-2.5 h-2.5 text-blue-500 shrink-0" /> FB
+                              </a>
+                            )}
+                            {prog.linkInstagram && (
+                              <a
+                                href={prog.linkInstagram}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`text-[9px] font-bold px-2 py-1 rounded-lg flex items-center gap-1 hover:opacity-85 cursor-pointer transition-opacity ${
+                                  prog.isHighlighted ? 'bg-pink-600/20 text-pink-200 border border-pink-500/25' : 'bg-pink-50 text-pink-800 border border-pink-150'
+                                }`}
+                              >
+                                <Instagram className="w-2.5 h-2.5 text-pink-500 shrink-0" /> IG
+                              </a>
+                            )}
+                            {prog.linkYoutube && (
+                              <a
+                                href={prog.linkYoutube}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`text-[9px] font-bold px-2 py-1 rounded-lg flex items-center gap-1 hover:opacity-85 cursor-pointer transition-opacity ${
+                                  prog.isHighlighted ? 'bg-red-600/20 text-red-200 border border-red-500/25' : 'bg-red-50 text-red-800 border border-red-150'
+                                }`}
+                              >
+                                <Youtube className="w-2.5 h-2.5 text-red-500 shrink-0" /> YouTube
+                              </a>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <span className={`text-[9px] font-mono mt-4 font-semibold inline-block ${prog.isHighlighted ? 'text-slate-400' : 'text-gray-400'}`}>
                         Urutan No: {prog.urutan}
@@ -1051,6 +1242,59 @@ export default function App() {
                           <span className="text-[10px] text-amber-900 font-mono font-semibold block">{item.tanggal || 'Kabar Terbaru'}</span>
                           <h4 className="font-serif font-bold text-[#1B365D] text-base leading-tight mt-1">{item.judul}</h4>
                           <p className="text-xs text-gray-500 leading-relaxed mt-1">{item.deskripsi}</p>
+                        </div>
+
+                        {/* GALLERY ITEM ATTACHMENTS & SOCIAL MEDIA CHANNELS */}
+                        <div className="border-t border-gray-100 pt-3 flex flex-col gap-2 w-full mt-2">
+                          {item.fileName && item.fileData ? (
+                            <div className="flex items-center justify-between text-[11px] text-gray-700 bg-gray-50 p-2 rounded-lg border border-gray-100">
+                              <span className="flex items-center gap-1 font-mono truncate max-w-[140px]" title={item.fileName}>
+                                <FileText className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                                {item.fileName}
+                              </span>
+                              <div className="flex items-center gap-2 shrink-0 font-bold">
+                                {(item.fileType?.includes('pdf') || item.fileName.toLowerCase().endsWith('.pdf')) && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setActivePreviewDoc({ name: item.fileName || '', type: item.fileType || '', data: item.fileData || '' })}
+                                    className="text-[10px] text-[#1B365D] hover:underline cursor-pointer"
+                                  >
+                                    Pratinjau
+                                  </button>
+                                )}
+                                <a
+                                  href={item.fileData}
+                                  download={item.fileName}
+                                  className="text-[10px] text-emerald-700 hover:underline cursor-pointer"
+                                >
+                                  Unduh
+                                </a>
+                              </div>
+                            </div>
+                          ) : null}
+
+                          {(item.linkFacebook || item.linkInstagram || item.linkYoutube) ? (
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] text-gray-400">Media Kabar:</span>
+                              <div className="flex items-center gap-1.5">
+                                {item.linkFacebook && (
+                                  <a href={item.linkFacebook} target="_blank" rel="noopener noreferrer" className="p-1 hover:bg-gray-100 rounded text-blue-600" title="Facebook Kegiatan">
+                                    <Facebook className="w-3.5 h-3.5" />
+                                  </a>
+                                )}
+                                {item.linkInstagram && (
+                                  <a href={item.linkInstagram} target="_blank" rel="noopener noreferrer" className="p-1 hover:bg-gray-100 rounded text-pink-600" title="Instagram Kegiatan">
+                                    <Instagram className="w-3.5 h-3.5" />
+                                  </a>
+                                )}
+                                {item.linkYoutube && (
+                                  <a href={item.linkYoutube} target="_blank" rel="noopener noreferrer" className="p-1 hover:bg-gray-100 rounded text-red-600" title="Video Kegiatan (YouTube)">
+                                    <Youtube className="w-3.5 h-3.5" />
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          ) : null}
                         </div>
                       </div>
                     </div>
@@ -1375,7 +1619,7 @@ export default function App() {
 
                       <div className="bg-white rounded-3xl border border-gray-200 p-4 mb-6 text-left">
                         <h4 className="font-bold text-xs uppercase tracking-wide text-amber-800 mb-3 border-b pb-1">Laporan & Input Neraca Keuangan</h4>
-                        <LaporanNeraca currentRole={currentRole} txs={txs} neraca={neraca} />
+                        <LaporanNeraca currentRole={currentRole} txs={txs} neraca={neraca} logoUrl={orgConfig.logoUrl} logoText={orgConfig.logoText} />
                       </div>
                       
                       <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
@@ -1403,7 +1647,7 @@ export default function App() {
                 {/* 4. TREASURER (BENDAHARA) PANEL FOR FINANCIAL LEDGER */}
                 {currentRole === UserRole.BENDAHARA && (
                   <div className="space-y-8">
-                    <LaporanNeraca currentRole={currentRole} txs={txs} neraca={neraca} />
+                    <LaporanNeraca currentRole={currentRole} txs={txs} neraca={neraca} logoUrl={orgConfig.logoUrl} logoText={orgConfig.logoText} />
                     <FinancialSheet currentRole={currentRole} />
                   </div>
                 )}
@@ -1411,7 +1655,7 @@ export default function App() {
                 {/* 5. CHAIRMAN (KETUA) ACCESSIBILITY PANEL */}
                 {currentRole === UserRole.KETUA && (
                   <div className="space-y-8">
-                    <LaporanNeraca currentRole={currentRole} txs={txs} neraca={neraca} />
+                    <LaporanNeraca currentRole={currentRole} txs={txs} neraca={neraca} logoUrl={orgConfig.logoUrl} logoText={orgConfig.logoText} />
                     <FinancialSheet currentRole={currentRole} />
                     <div className="border border-[#E5E0D5] p-5 rounded-2xl bg-white text-left">
                       <h4 className="font-serif font-bold text-[#1B365D] text-base mb-3">Kop Surat Dinas Ketua</h4>
@@ -1503,6 +1747,50 @@ export default function App() {
             setIsRegisterOpen(true);
           }}
         />
+      )}
+
+      {/* DOCUMENT PREVIEW MODAL */}
+      {activePreviewDoc && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-4xl w-full flex flex-col max-h-[90vh] shadow-2xl overflow-hidden border border-gray-100">
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50 text-left">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-[#1B365D]" />
+                <h4 className="font-bold text-sm text-[#1B365D] uppercase tracking-wide truncate max-w-[300px] md:max-w-[500px]">
+                  Pratinjau: {activePreviewDoc.name}
+                </h4>
+              </div>
+              <button
+                onClick={() => setActivePreviewDoc(null)}
+                className="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4 text-gray-500 hover:text-gray-700" />
+              </button>
+            </div>
+            <div className="flex-1 bg-gray-100 p-4 overflow-auto min-h-[500px] flex items-center justify-center">
+              {activePreviewDoc.type.includes('pdf') || activePreviewDoc.data.startsWith('data:application/pdf') ? (
+                <iframe
+                  src={activePreviewDoc.data}
+                  title={activePreviewDoc.name}
+                  className="w-full h-[65vh] rounded-lg border shadow-sm"
+                />
+              ) : (
+                <div className="text-center space-y-3 bg-white p-6 rounded-xl border max-w-md shadow-sm">
+                  <FileText className="w-12 h-12 text-[#1B365D] mx-auto" />
+                  <p className="text-sm font-semibold text-gray-800 font-serif">Pratinjau tidak didukung langsung di peramban</p>
+                  <p className="text-xs text-gray-500">Berkas format ini harus diunduh terlebih dahulu untuk dapat dibuka / dibaca.</p>
+                  <a
+                    href={activePreviewDoc.data}
+                    download={activePreviewDoc.name}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#1B365D] hover:bg-[#1B365D]/90 text-white rounded-lg text-xs font-bold leading-none cursor-pointer"
+                  >
+                    <Download className="w-4 h-4" /> Unduh Berkas Sekarang
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

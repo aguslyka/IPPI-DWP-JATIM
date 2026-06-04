@@ -125,6 +125,12 @@ export interface FokusKontribusi {
   judul: string;
   deskripsi: string;
   urutan: number;
+  fileName?: string;
+  fileType?: string;
+  fileData?: string;
+  linkFacebook?: string;
+  linkInstagram?: string;
+  linkYoutube?: string;
 }
 
 export interface AboutItem {
@@ -141,6 +147,12 @@ export interface ProgramItem {
   deskripsi: string;
   isHighlighted?: boolean;
   urutan: number;
+  fileName?: string;
+  fileType?: string;
+  fileData?: string; // base64 encoded document
+  linkFacebook?: string;
+  linkInstagram?: string;
+  linkYoutube?: string;
 }
 
 export interface BeritaItem {
@@ -149,6 +161,12 @@ export interface BeritaItem {
   tanggal: string;
   kutipan: string;
   penulis: string;
+  fileName?: string;
+  fileType?: string;
+  fileData?: string;
+  linkFacebook?: string;
+  linkInstagram?: string;
+  linkYoutube?: string;
 }
 
 export interface JurnalItem {
@@ -157,6 +175,12 @@ export interface JurnalItem {
   tanggalPublikasi: string;
   subjek: string;
   abstrak: string;
+  fileName?: string;
+  fileType?: string;
+  fileData?: string;
+  linkFacebook?: string;
+  linkInstagram?: string;
+  linkYoutube?: string;
 }
 
 export interface ActivityPhoto {
@@ -168,6 +192,12 @@ export interface ActivityPhoto {
   deskripsi?: string;
   tanggal?: string;
   fullOverview?: string;
+  fileName?: string;
+  fileType?: string;
+  fileData?: string;
+  linkFacebook?: string;
+  linkInstagram?: string;
+  linkYoutube?: string;
 }
 
 export interface StructureItem {

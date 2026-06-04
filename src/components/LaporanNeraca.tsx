@@ -7,9 +7,11 @@ interface LaporanNeracaProps {
   currentRole: UserRole | null;
   txs: FinancialTransaction[];
   neraca: BalanceSheetData;
+  logoUrl?: string;
+  logoText?: string;
 }
 
-export default function LaporanNeraca({ currentRole, txs, neraca }: LaporanNeracaProps) {
+export default function LaporanNeraca({ currentRole, txs, neraca, logoUrl, logoText }: LaporanNeracaProps) {
   const isAuthorized = currentRole === UserRole.ADMIN || currentRole === UserRole.BENDAHARA;
   const [isEditing, setIsEditing] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -454,12 +456,23 @@ export default function LaporanNeraca({ currentRole, txs, neraca }: LaporanNerac
       <div className="bg-white border border-[#E5E0D5] rounded-3xl p-6 sm:p-8 text-left shadow-xs space-y-6">
         
         {/* Header Kop Laporan */}
-        <div className="text-center space-y-1.5 border-b-2 border-[#1B365D] pb-4">
-          <h3 className="text-[10px] uppercase font-bold tracking-widest text-[#8B7E66]">IKATAN PENSIUNAN PEGAWAI INDONESIA (IPPI)</h3>
-          <h4 className="text-xl font-serif text-[#1B365D] font-extrabold">LAPORAN NERACA KEUANGAN ORGANISASI</h4>
-          <p className="text-[11px] text-gray-500 font-mono">
-            Per Tanggal: {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
-          </p>
+        <div className="border-b-2 border-[#1B365D] pb-5 flex flex-col md:flex-row items-center justify-center gap-4 text-center md:text-left">
+          {(logoUrl || logoText) && (
+            <div className="w-16 h-16 bg-[#1B365D] text-white rounded-full flex items-center justify-center text-xl font-serif font-bold border-2 border-[#C5A059] md:mr-2 shrink-0 shadow-sm overflow-hidden">
+              {logoUrl ? (
+                <img src={logoUrl} alt="Logo Organisasi" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              ) : (
+                logoText
+              )}
+            </div>
+          )}
+          <div className="space-y-1">
+            <h3 className="text-[10px] uppercase font-bold tracking-widest text-[#8B7E66]">IKATAN PROFESIONAL & PENSIUNAN INDONESIA DPW JAWA TIMUR</h3>
+            <h4 className="text-xl sm:text-2xl font-serif text-[#1B365D] font-extrabold leading-tight">LAPORAN NERACA KEUANGAN ORGANISASI</h4>
+            <p className="text-[11px] text-gray-500 font-mono">
+              Per Tanggal: {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+            </p>
+          </div>
         </div>
 
         {/* Balance Sheet Content Grid */}

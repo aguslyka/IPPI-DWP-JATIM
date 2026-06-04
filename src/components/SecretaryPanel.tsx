@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { HomepageContent, Member, OrgConfig, UserRole } from '../types';
 import { getStoredContent, saveStoredContent, getStoredMembers, saveStoredMembers, saveStoredConfig } from '../utils/storage';
-import { Edit, Save, Plus, Trash2, CheckCircle2, MessageSquare, PhoneCall, Printer } from 'lucide-react';
+import { Edit, Save, Plus, Trash2, CheckCircle2, MessageSquare, PhoneCall, Printer, Paperclip, FileText, Facebook, Instagram, Youtube } from 'lucide-react';
 import KopSurat from './KopSurat';
 import AboutEditor from './editors/AboutEditor';
 import ProgramEditor from './editors/ProgramEditor';
@@ -43,6 +43,33 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
   const [editingKegId, setEditingKegId] = useState<string | null>(null);
   const [editKegJudul, setEditKegJudul] = useState('');
   const [editKegDesc, setEditKegDesc] = useState('');
+
+  // SESSIONS COMPANION STATES FOR DOCUMENTS & SOCIAL PROFILES - SECRETARY
+  const [previewSecFile, setPreviewSecFile] = useState<{ name: string; type: string; data: string } | null>(null);
+
+  // Kegiatan Lampiran & Media Sosial
+  const [newKegFileState, setNewKegFileState] = useState<{ name: string; type: string; data: string } | null>(null);
+  const [editKegFileState, setEditKegFileState] = useState<{ name: string; type: string; data: string } | null>(null);
+
+  const [newKegLinkFacebook, setNewKegLinkFacebook] = useState('');
+  const [newKegLinkInstagram, setNewKegLinkInstagram] = useState('');
+  const [newKegLinkYoutube, setNewKegLinkYoutube] = useState('');
+
+  const [editKegLinkFacebook, setEditKegLinkFacebook] = useState('');
+  const [editKegLinkInstagram, setEditKegLinkInstagram] = useState('');
+  const [editKegLinkYoutube, setEditKegLinkYoutube] = useState('');
+
+  // Fokus Lampiran & Media Sosial
+  const [newFokusFileState, setNewFokusFileState] = useState<{ name: string; type: string; data: string } | null>(null);
+  const [editFokusFileState, setEditFokusFileState] = useState<{ name: string; type: string; data: string } | null>(null);
+
+  const [newFokusLinkFacebook, setNewFokusLinkFacebook] = useState('');
+  const [newFokusLinkInstagram, setNewFokusLinkInstagram] = useState('');
+  const [newFokusLinkYoutube, setNewFokusLinkYoutube] = useState('');
+
+  const [editFokusLinkFacebook, setEditFokusLinkFacebook] = useState('');
+  const [editFokusLinkInstagram, setEditFokusLinkInstagram] = useState('');
+  const [editFokusLinkYoutube, setEditFokusLinkYoutube] = useState('');
   const [editKegTanggal, setEditKegTanggal] = useState('');
   const [editKegImage, setEditKegImage] = useState('');
   const [editKegIsVideo, setEditKegIsVideo] = useState(false);
@@ -83,6 +110,28 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
       window.removeEventListener('ippi_storage_updated', handleReload);
     };
   }, []);
+
+  const handleSecFileChange = (e: React.ChangeEvent<HTMLInputElement>, setter: (s: { name: string; type: string; data: string } | null) => void) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Ukuran berkas maksimal adalah 5MB untuk kestabilan penyimpanan database.');
+      e.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64Data = reader.result as string;
+      setter({
+        name: file.name,
+        type: file.type,
+        data: base64Data
+      });
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleAddStruktur = () => {
     if (!content) return;
@@ -191,7 +240,15 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
       isVideo: newKegIsVideo,
       judul: newKegJudul,
       deskripsi: newKegDesc,
-      tanggal: newKegTanggal
+      tanggal: newKegTanggal,
+      // Attached File properties
+      fileName: newKegFileState ? newKegFileState.name : undefined,
+      fileType: newKegFileState ? newKegFileState.type : undefined,
+      fileData: newKegFileState ? newKegFileState.data : undefined,
+      // Social Web links
+      linkFacebook: newKegLinkFacebook.trim() || undefined,
+      linkInstagram: newKegLinkInstagram.trim() || undefined,
+      linkYoutube: newKegLinkYoutube.trim() || undefined
     };
     const updated = {
       ...content,
@@ -208,6 +265,10 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
     setNewKegImage('');
     setNewKegIsVideo(false);
     setNewKegVideoUrl('');
+    setNewKegFileState(null);
+    setNewKegLinkFacebook('');
+    setNewKegLinkInstagram('');
+    setNewKegLinkYoutube('');
     setIsAddKegOpen(false);
     setFeedback('Sukses: Media kegiatan baru berhasil ditambahkan!');
     setTimeout(() => setFeedback(null), 4000);
@@ -221,6 +282,10 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
     setEditKegImage(keg.imageUrl || '');
     setEditKegIsVideo(!!keg.isVideo);
     setEditKegVideoUrl(keg.videoUrl || '');
+    setEditKegFileState(keg.fileName ? { name: keg.fileName, type: keg.fileType || '', data: keg.fileData || '' } : null);
+    setEditKegLinkFacebook(keg.linkFacebook || '');
+    setEditKegLinkInstagram(keg.linkInstagram || '');
+    setEditKegLinkYoutube(keg.linkYoutube || '');
   };
 
   const handleSaveEditKeg = () => {
@@ -247,7 +312,15 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
           tanggal: editKegTanggal,
           imageUrl: editKegImage,
           videoUrl: editKegVideoUrl,
-          isVideo: editKegIsVideo
+          isVideo: editKegIsVideo,
+          // Update file
+          fileName: editKegFileState ? editKegFileState.name : undefined,
+          fileType: editKegFileState ? editKegFileState.type : undefined,
+          fileData: editKegFileState ? editKegFileState.data : undefined,
+          // Update social
+          linkFacebook: editKegLinkFacebook.trim() || undefined,
+          linkInstagram: editKegLinkInstagram.trim() || undefined,
+          linkYoutube: editKegLinkYoutube.trim() || undefined
         };
       }
       return k;
@@ -260,6 +333,10 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
     saveStoredContent(updated);
     onContentChange(updated);
     setEditingKegId(null);
+    setEditKegFileState(null);
+    setEditKegLinkFacebook('');
+    setEditKegLinkInstagram('');
+    setEditKegLinkYoutube('');
     setFeedback('Sukses: Perubahan media kegiatan berhasil disimpan!');
     setTimeout(() => setFeedback(null), 4000);
   };
@@ -294,7 +371,15 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
       id: `fokus_${Date.now()}`,
       judul: newFokusJudul,
       deskripsi: newFokusDesc,
-      urutan: ord
+      urutan: ord,
+      // Attached File properties
+      fileName: newFokusFileState ? newFokusFileState.name : undefined,
+      fileType: newFokusFileState ? newFokusFileState.type : undefined,
+      fileData: newFokusFileState ? newFokusFileState.data : undefined,
+      // Social Web links
+      linkFacebook: newFokusLinkFacebook.trim() || undefined,
+      linkInstagram: newFokusLinkInstagram.trim() || undefined,
+      linkYoutube: newFokusLinkYoutube.trim() || undefined
     };
     const updated = {
       ...content,
@@ -308,6 +393,10 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
     setNewFokusJudul('');
     setNewFokusDesc('');
     setNewFokusUrutan('');
+    setNewFokusFileState(null);
+    setNewFokusLinkFacebook('');
+    setNewFokusLinkInstagram('');
+    setNewFokusLinkYoutube('');
     setIsAddFokusOpen(false);
     setFeedback('Sukses: Fokus kontribusi baru berhasil ditambahkan!');
     setTimeout(() => setFeedback(null), 4000);
@@ -318,6 +407,10 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
     setEditFokusJudul(item.judul);
     setEditFokusDesc(item.deskripsi || '');
     setEditFokusUrutan(item.urutan || '');
+    setEditFokusFileState(item.fileName ? { name: item.fileName, type: item.fileType || '', data: item.fileData || '' } : null);
+    setEditFokusLinkFacebook(item.linkFacebook || '');
+    setEditFokusLinkInstagram(item.linkInstagram || '');
+    setEditFokusLinkYoutube(item.linkYoutube || '');
   };
 
   const handleSaveEditFokus = () => {
@@ -334,7 +427,15 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
           ...f,
           judul: editFokusJudul,
           deskripsi: editFokusDesc,
-          urutan: ord
+          urutan: ord,
+          // Update file
+          fileName: editFokusFileState ? editFokusFileState.name : undefined,
+          fileType: editFokusFileState ? editFokusFileState.type : undefined,
+          fileData: editFokusFileState ? editFokusFileState.data : undefined,
+          // Update social
+          linkFacebook: editFokusLinkFacebook.trim() || undefined,
+          linkInstagram: editFokusLinkInstagram.trim() || undefined,
+          linkYoutube: editFokusLinkYoutube.trim() || undefined
         };
       }
       return f;
@@ -347,6 +448,10 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
     saveStoredContent(updated);
     if (onContentChange) onContentChange(updated);
     setEditingFokusId(null);
+    setEditFokusFileState(null);
+    setEditFokusLinkFacebook('');
+    setEditFokusLinkInstagram('');
+    setEditFokusLinkYoutube('');
     setFeedback('Sukses: Perubahan fokus kontribusi berhasil disimpan!');
     setTimeout(() => setFeedback(null), 4000);
   };
@@ -788,6 +893,81 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
                     )}
                   </div>
                 </div>
+
+                <div className="border-t border-[#E5E0D5]/70 pt-3 text-left">
+                  <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">Lampiran Berkas Kegiatan (Opsional: PDF, DOC, DOCX, PPT, PPTX)</label>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-1 text-xs">
+                    <input
+                      type="file"
+                      id="sec-new-keg-file"
+                      accept=".pdf,.doc,.docx,.ppt,.pptx"
+                      onChange={(e) => handleSecFileChange(e, setNewKegFileState)}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="sec-new-keg-file"
+                      className="px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-700 rounded-lg text-xs font-semibold cursor-pointer border border-[#E5E0D5] flex items-center gap-1.5"
+                    >
+                      <Paperclip className="w-3.5 h-3.5" /> Pilih File Berkas
+                    </label>
+                    {newKegFileState ? (
+                      <div className="flex items-center gap-2 text-xs bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-1 rounded-lg">
+                        <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                        <span className="font-semibold max-w-[200px] truncate">{newKegFileState.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => setNewKegFileState(null)}
+                          className="text-red-700 hover:text-red-900 font-bold ml-1 text-sm leading-none cursor-pointer"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-gray-500 italic">Maksimal 5MB. Dokumen dapat diunduh / dipreview pengunjung.</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* SOCIAL CHANNELS ROW */}
+                <div className="border-t border-[#E5E0D5]/70 pt-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-left">
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">
+                      <span className="flex items-center gap-1"><Facebook className="w-3.5 h-3.5 text-blue-600 animate-pulse" /> Link Facebook (Opsional)</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={newKegLinkFacebook}
+                      onChange={(e) => setNewKegLinkFacebook(e.target.value)}
+                      placeholder="https://facebook.com/..."
+                      className="w-full bg-white border border-[#E5E0D5] rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">
+                      <span className="flex items-center gap-1"><Instagram className="w-3.5 h-3.5 text-pink-600 animate-pulse" /> Link Instagram (Opsional)</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={newKegLinkInstagram}
+                      onChange={(e) => setNewKegLinkInstagram(e.target.value)}
+                      placeholder="https://instagram.com/..."
+                      className="w-full bg-white border border-[#E5E0D5] rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">
+                      <span className="flex items-center gap-1"><Youtube className="w-3.5 h-3.5 text-red-600 animate-pulse" /> Link YouTube (Opsional)</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={newKegLinkYoutube}
+                      onChange={(e) => setNewKegLinkYoutube(e.target.value)}
+                      placeholder="https://youtube.com/watch?v=..."
+                      className="w-full bg-white border border-[#E5E0D5] rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                    />
+                  </div>
+                </div>
+
                 <div className="pt-2 flex justify-end">
                   <button
                     type="button"
@@ -898,6 +1078,81 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
                     )}
                   </div>
                 </div>
+
+                <div className="border-t border-[#E5E0D5]/70 pt-3 text-left">
+                  <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">Ganti Lampiran Berkas Kegiatan (Opsional: PDF, DOC, DOCX, PPT, PPTX)</label>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-1 text-xs">
+                    <input
+                      type="file"
+                      id="sec-edit-keg-file"
+                      accept=".pdf,.doc,.docx,.ppt,.pptx"
+                      onChange={(e) => handleSecFileChange(e, setEditKegFileState)}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="sec-edit-keg-file"
+                      className="px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-700 rounded-lg text-xs font-semibold cursor-pointer border border-[#E5E0D5] flex items-center gap-1.5"
+                    >
+                      <Paperclip className="w-3.5 h-3.5" /> Pilih File Berkas
+                    </label>
+                    {editKegFileState ? (
+                      <div className="flex items-center gap-2 text-xs bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-1 rounded-lg">
+                        <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                        <span className="font-semibold max-w-[200px] truncate">{editKegFileState.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => setEditKegFileState(null)}
+                          className="text-red-700 hover:text-red-900 font-bold ml-1 text-sm leading-none cursor-pointer"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-gray-500 italic">Maksimal 5MB. Dokumen dapat diunduh / dipreview pengunjung.</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* SOCIAL CHANNELS ROW ON EDIT */}
+                <div className="border-t border-[#E5E0D5]/70 pt-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-left">
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">
+                      <span className="flex items-center gap-1"><Facebook className="w-3.5 h-3.5 text-blue-600 animate-pulse" /> Link Facebook (Opsional)</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={editKegLinkFacebook}
+                      onChange={(e) => setEditKegLinkFacebook(e.target.value)}
+                      placeholder="https://facebook.com/..."
+                      className="w-full bg-white border border-[#E5E0D5] rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">
+                      <span className="flex items-center gap-1"><Instagram className="w-3.5 h-3.5 text-pink-600 animate-pulse" /> Link Instagram (Opsional)</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={editKegLinkInstagram}
+                      onChange={(e) => setEditKegLinkInstagram(e.target.value)}
+                      placeholder="https://instagram.com/..."
+                      className="w-full bg-white border border-[#E5E0D5] rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">
+                      <span className="flex items-center gap-1"><Youtube className="w-3.5 h-3.5 text-red-600 animate-pulse" /> Link YouTube (Opsional)</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={editKegLinkYoutube}
+                      onChange={(e) => setEditKegLinkYoutube(e.target.value)}
+                      placeholder="https://youtube.com/watch?v=..."
+                      className="w-full bg-white border border-[#E5E0D5] rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                    />
+                  </div>
+                </div>
+
                 <div className="pt-2 flex justify-end">
                   <button
                     type="button"
@@ -913,7 +1168,7 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
             {/* List of current Kegiatan */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {(content.kegiatan || []).map((keg) => (
-                <div key={keg.id} className="border border-[#E5E0D5] rounded-xl p-3 bg-gray-50/50 flex space-x-3 items-center">
+                <div key={keg.id} className="border border-[#E5E0D5] rounded-xl p-3 bg-gray-50/50 flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 items-center">
                   <div className="w-20 h-16 bg-white border border-[#E5E0D5] rounded-lg overflow-hidden shrink-0">
                     {keg.imageUrl ? (
                       <img src={keg.imageUrl} alt={keg.judul} className="w-full h-full object-cover" />
@@ -924,6 +1179,28 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
                   <div className="flex-1 min-w-0">
                     <h5 className="text-[11px] font-bold text-[#1B365D] truncate">{keg.judul}</h5>
                     <p className="text-[9px] text-gray-400 truncate">{keg.tanggal || 'No date'}</p>
+
+                    {/* Lampiran files and social preview row for Secretary */}
+                    <div className="mt-1.5 flex flex-wrap gap-2 text-[10px] items-center">
+                      {keg.fileName ? (
+                        <span className="flex items-center gap-1 font-mono text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 max-w-[150px] truncate">
+                          <FileText className="w-3 h-3 text-emerald-600" />
+                          {keg.fileName}
+                        </span>
+                      ) : (
+                        <span className="text-[9px] text-gray-400 italic">No files</span>
+                      )}
+
+                      {/* Social web channels */}
+                      {(keg.linkFacebook || keg.linkInstagram || keg.linkYoutube) ? (
+                        <div className="flex items-center gap-1 bg-blue-50/50 px-1 py-0.5 rounded border border-blue-50">
+                          {keg.linkFacebook && <Facebook className="w-3 h-3 text-blue-600" />}
+                          {keg.linkInstagram && <Instagram className="w-3 h-3 text-pink-600" />}
+                          {keg.linkYoutube && <Youtube className="w-3 h-3 text-red-600" />}
+                        </div>
+                      ) : null}
+                    </div>
+
                     <div className="mt-1 flex space-x-3">
                       <button
                         type="button"
@@ -1398,6 +1675,82 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
                   />
                 </div>
               </div>
+
+              {/* Lampiran berkas pilar fokus */}
+              <div className="border-t border-[#E5E0D5]/70 pt-3 text-left">
+                <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">Lampiran Berkas Kegiatan (Opsional: PDF, DOC, DOCX, PPT, PPTX)</label>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-1 text-xs">
+                  <input
+                    type="file"
+                    id="sec-new-fokus-file"
+                    accept=".pdf,.doc,.docx,.ppt,.pptx"
+                    onChange={(e) => handleSecFileChange(e, setNewFokusFileState)}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="sec-new-fokus-file"
+                    className="px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-700 rounded-lg text-xs font-semibold cursor-pointer border border-[#E5E0D5] flex items-center gap-1.5"
+                  >
+                    <Paperclip className="w-3.5 h-3.5" /> Pilih File Berkas
+                  </label>
+                  {newFokusFileState ? (
+                    <div className="flex items-center gap-2 text-xs bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-1 rounded-lg">
+                      <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                      <span className="font-semibold max-w-[200px] truncate">{newFokusFileState.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => setNewFokusFileState(null)}
+                        className="text-red-700 hover:text-red-900 font-bold ml-1 text-sm leading-none cursor-pointer"
+                      >
+                        &times;
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-[10px] text-gray-500 italic">Maksimal 5MB. Dokumen dapat diunduh / dipreview pengunjung.</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Social URLs media links for Fokus pilar */}
+              <div className="border-t border-[#E5E0D5]/70 pt-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-left">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">
+                    <span className="flex items-center gap-1"><Facebook className="w-3.5 h-3.5 text-blue-600 animate-pulse" /> Link Facebook (Opsional)</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={newFokusLinkFacebook}
+                    onChange={(e) => setNewFokusLinkFacebook(e.target.value)}
+                    placeholder="https://facebook.com/..."
+                    className="w-full bg-white border border-[#E5E0D5] rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">
+                    <span className="flex items-center gap-1"><Instagram className="w-3.5 h-3.5 text-pink-600 animate-pulse" /> Link Instagram (Opsional)</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={newFokusLinkInstagram}
+                    onChange={(e) => setNewFokusLinkInstagram(e.target.value)}
+                    placeholder="https://instagram.com/..."
+                    className="w-full bg-white border border-[#E5E0D5] rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">
+                    <span className="flex items-center gap-1"><Youtube className="w-3.5 h-3.5 text-red-600 animate-pulse" /> Link YouTube (Opsional)</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={newFokusLinkYoutube}
+                    onChange={(e) => setNewFokusLinkYoutube(e.target.value)}
+                    placeholder="https://youtube.com/watch?v=..."
+                    className="w-full bg-white border border-[#E5E0D5] rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                  />
+                </div>
+              </div>
+
               <div className="pt-2 flex justify-end">
                 <button
                   type="button"
@@ -1457,6 +1810,82 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
                   />
                 </div>
               </div>
+
+              {/* Ganti Lampiran berkas pilar fokus */}
+              <div className="border-t border-[#E5E0D5]/70 pt-3 text-left">
+                <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">Ganti Lampiran Berkas Kegiatan (Opsional: PDF, DOC, DOCX, PPT, PPTX)</label>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-1 text-xs">
+                  <input
+                    type="file"
+                    id="sec-edit-fokus-file"
+                    accept=".pdf,.doc,.docx,.ppt,.pptx"
+                    onChange={(e) => handleSecFileChange(e, setEditFokusFileState)}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="sec-edit-fokus-file"
+                    className="px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-700 rounded-lg text-xs font-semibold cursor-pointer border border-[#E5E0D5] flex items-center gap-1.5"
+                  >
+                    <Paperclip className="w-3.5 h-3.5" /> Pilih File Berkas
+                  </label>
+                  {editFokusFileState ? (
+                    <div className="flex items-center gap-2 text-xs bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-1 rounded-lg">
+                      <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                      <span className="font-semibold max-w-[200px] truncate">{editFokusFileState.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => setEditFokusFileState(null)}
+                        className="text-red-700 hover:text-red-900 font-bold ml-1 text-sm leading-none cursor-pointer"
+                      >
+                        &times;
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-[10px] text-gray-500 italic">Maksimal 5MB. Dokumen dapat diunduh / dipreview pengunjung.</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Social URLs media links for Fokus pilar edit mode */}
+              <div className="border-t border-[#E5E0D5]/70 pt-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-left">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">
+                    <span className="flex items-center gap-1"><Facebook className="w-3.5 h-3.5 text-blue-600 animate-pulse" /> Link Facebook (Opsional)</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={editFokusLinkFacebook}
+                    onChange={(e) => setEditFokusLinkFacebook(e.target.value)}
+                    placeholder="https://facebook.com/..."
+                    className="w-full bg-white border border-[#E5E0D5] rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">
+                    <span className="flex items-center gap-1"><Instagram className="w-3.5 h-3.5 text-pink-600 animate-pulse" /> Link Instagram (Opsional)</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={editFokusLinkInstagram}
+                    onChange={(e) => setEditFokusLinkInstagram(e.target.value)}
+                    placeholder="https://instagram.com/..."
+                    className="w-full bg-white border border-[#E5E0D5] rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">
+                    <span className="flex items-center gap-1"><Youtube className="w-3.5 h-3.5 text-red-600 animate-pulse" /> Link YouTube (Opsional)</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={editFokusLinkYoutube}
+                    onChange={(e) => setEditFokusLinkYoutube(e.target.value)}
+                    placeholder="https://youtube.com/watch?v=..."
+                    className="w-full bg-white border border-[#E5E0D5] rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                  />
+                </div>
+              </div>
+
               <div className="pt-2 flex justify-end">
                 <button
                   type="button"
@@ -1499,6 +1928,26 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
                   </div>
                   <h4 className="font-serif font-bold text-[#1B365D] text-sm mt-3">{item.judul}</h4>
                   <p className="text-[11px] text-gray-500 leading-relaxed mt-1">{item.deskripsi}</p>
+
+                  <div className="mt-3 pt-3 border-t border-gray-100 flex flex-wrap gap-2 text-[10px] items-center">
+                    {item.fileName ? (
+                      <span className="flex items-center gap-1 font-mono text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 max-w-[170px] truncate" title={item.fileName}>
+                        <FileText className="w-3 h-3 text-emerald-600 shrink-0" />
+                        {item.fileName}
+                      </span>
+                    ) : (
+                      <span className="text-[9px] text-gray-400 italic">No files attached</span>
+                    )}
+
+                    {/* Social networks badge indicators */}
+                    {(item.linkFacebook || item.linkInstagram || item.linkYoutube) ? (
+                      <div className="flex items-center gap-1 bg-blue-50/50 px-1.5 py-0.5 rounded border border-blue-50">
+                        {item.linkFacebook && <Facebook className="w-3 h-3 text-blue-600" />}
+                        {item.linkInstagram && <Instagram className="w-3 h-3 text-pink-600" />}
+                        {item.linkYoutube && <Youtube className="w-3 h-3 text-red-600" />}
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
               </div>
             ))}
