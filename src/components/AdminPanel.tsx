@@ -6,6 +6,7 @@ import AboutEditor from './editors/AboutEditor';
 import ProgramEditor from './editors/ProgramEditor';
 import BeritaEditor from './editors/BeritaEditor';
 import JurnalEditor from './editors/JurnalEditor';
+import LapakUmkm from './LapakUmkm';
 
 export const getRoleBadge = (m: Member | Partial<Member>) => {
   let role = m.role || UserRole.ANGGOTA;
@@ -42,7 +43,7 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
   const [visitors, setVisitors] = useState<VisitorLog[]>([]);
 
   // Active Admin Sub-tab
-  const [subTab, setSubTab] = useState<'CONFIG' | 'USERS' | 'VISITORS' | 'GALLERY' | 'STRUKTUR' | 'TENTANG_KAMI' | 'PROG_KERJA' | 'BERITA' | 'JURNAL' | 'FOKUS_KONTRIBUSI'>('CONFIG');
+  const [subTab, setSubTab] = useState<'CONFIG' | 'USERS' | 'VISITORS' | 'GALLERY' | 'STRUKTUR' | 'TENTANG_KAMI' | 'PROG_KERJA' | 'BERITA' | 'JURNAL' | 'FOKUS_KONTRIBUSI' | 'LAPAK_UMKM'>('CONFIG');
 
   // Selected User for Editing
   const [isEditingUser, setIsEditingUser] = useState<boolean>(false);
@@ -653,6 +654,15 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
                 }`}
               >
                 <span>6. Fokus Kontribusi</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setSubTab('LAPAK_UMKM'); setIsEditingUser(false); }}
+                className={`inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  subTab === 'LAPAK_UMKM' ? 'bg-[#1B365D] text-white' : 'text-[#5D574F] hover:bg-gray-200'
+                }`}
+              >
+                <span>7. Lapak UMKM</span>
               </button>
             </div>
           </div>
@@ -2014,6 +2024,24 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {subTab === 'LAPAK_UMKM' && homeContent && (
+        <div className="space-y-6 text-left">
+          <LapakUmkm
+            content={homeContent}
+            currentUser={{ role: UserRole.ADMIN } as Member}
+            onSave={(updated) => {
+              setHomeContent(updated);
+              saveStoredContent(updated);
+              if (onContentChange) {
+                onContentChange(updated);
+              }
+              setFeedback({ status: 'ok', msg: 'Sukses: Produk Lapak UMKM berhasil diperbarui!' });
+              setTimeout(() => setFeedback(null), 4000);
+            }}
+          />
         </div>
       )}
     </div>

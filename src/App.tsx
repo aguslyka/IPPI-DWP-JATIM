@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Member, UserRole, OrgConfig, HomepageContent } from './types';
-import { getStoredConfig, getStoredContent, getStoredMembers, saveStoredMembers, logVisitorAction } from './utils/storage';
+import { getStoredConfig, getStoredContent, getStoredMembers, saveStoredMembers, logVisitorAction, saveStoredContent } from './utils/storage';
 import RegistrationForm from './components/RegistrationForm';
 import LoginModal from './components/LoginModal';
 import MemberCard from './components/MemberCard';
@@ -9,6 +9,7 @@ import MemberFinanceInfo from './components/MemberFinanceInfo';
 import AdminPanel from './components/AdminPanel';
 import SecretaryPanel from './components/SecretaryPanel';
 import KopSurat from './components/KopSurat';
+import LapakUmkm from './components/LapakUmkm';
 
 import {
   Menu,
@@ -56,7 +57,7 @@ export default function App() {
   const [fontScale, setFontScale] = useState<'standard' | 'large' | 'xl'>('standard');
 
   // Multi-screen / tab system
-  const [activeTab, setActiveTab] = useState<'HOME' | 'ABOUT' | 'PROGRAM' | 'GALLERY' | 'BLOG' | 'MANAGEMENT' | 'JOURNAL'>('HOME');
+  const [activeTab, setActiveTab] = useState<'HOME' | 'ABOUT' | 'PROGRAM' | 'GALLERY' | 'BLOG' | 'MANAGEMENT' | 'JOURNAL' | 'UMKM'>('HOME');
 
   // Sliding current indices (sliding 2-3 items window)
   const [aboutSlideIndex, setAboutSlideIndex] = useState(0);
@@ -353,6 +354,12 @@ export default function App() {
               className={`py-1.5 px-1 border-b-2 transition-colors cursor-pointer ${activeTab === 'JOURNAL' ? 'border-[#1B365D] text-[#1B365D]' : 'border-transparent hover:text-[#1B365D]'}`}
             >
               Jurnal
+            </button>
+            <button
+              onClick={() => { setActiveTab('UMKM'); setIsRegisterOpen(false); }}
+              className={`py-1.5 px-1 border-b-2 transition-colors cursor-pointer ${activeTab === 'UMKM' ? 'border-[#1B365D] text-[#1B365D]' : 'border-transparent hover:text-[#1B365D]'}`}
+            >
+              Lapak UMKM
             </button>
 
             {/* IF NOT LOGGED IN: SHOW REGISTER / LOGIN */}
@@ -718,6 +725,108 @@ export default function App() {
                   </div>
                 </div>
 
+                {/* LAPAK UMKM UNGGULAN (HOMEPAGE GRID) */}
+                {(() => {
+                  const featuredUmkm = (homeContent.umkmList || []).filter(item => item.isBeranda);
+                  if (featuredUmkm.length === 0) return null;
+
+                  return (
+                    <div className="space-y-6 pt-6 border-t border-[#E5E0D5]">
+                      <div className="flex items-end justify-between text-left">
+                        <div>
+                          <span className="text-[9px] uppercase tracking-widest text-[#8B7E66] font-extrabold block">Pemberdayaan Ekonomi Senior</span>
+                          <h3 className="text-2xl font-serif text-[#1B365D] font-bold mt-1">Produk UMKM Unggulan</h3>
+                        </div>
+                        <button 
+                          onClick={() => setActiveTab('UMKM')} 
+                          className="text-xs font-bold text-[#C5A059] hover:underline cursor-pointer"
+                        >
+                          Kunjungi Lapak UMKM Lengkap &rarr;
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                        {featuredUmkm.map((p) => {
+                          const sanitizeWhatsApp = (numStr: string) => {
+                            let clean = numStr.replace(/\D/g, '');
+                            if (clean.startsWith('0')) {
+                              clean = '62' + clean.slice(1);
+                            } else if (clean.startsWith('8')) {
+                              clean = '62' + clean;
+                            }
+                            return clean;
+                          };
+
+                          const formatRupiah = (val: number | string) => {
+                            if (typeof val === 'number') {
+                              return 'Rp ' + val.toLocaleString('id-ID');
+                            }
+                            if (val.trim().toLowerCase().startsWith('rp')) {
+                              return val;
+                            }
+                            const cleanNum = Number(val.replace(/[^\d]/g, ''));
+                            if (!isNaN(cleanNum) && cleanNum > 0) {
+                              return 'Rp ' + cleanNum.toLocaleString('id-ID');
+                            }
+                            return val;
+                          };
+
+                          return (
+                            <div 
+                              key={p.id}
+                              className="group bg-white rounded-2xl border border-[#E5E0D5] overflow-hidden flex flex-col hover:shadow-md transition-all duration-300 text-left relative"
+                            >
+                              <div className="relative aspect-video w-full bg-slate-50 overflow-hidden">
+                                <img
+                                  src={p.imageUrl || 'https://images.unsplash.com/photo-1546213290-e1b7610339e5?q=80&w=600&auto=format&fit=crop'}
+                                  alt={p.namaProduk}
+                                  referrerPolicy="no-referrer"
+                                  className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
+                                />
+                                <span className="absolute top-3 left-3 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-white bg-[#1B365D]/95 backdrop-blur-xs rounded-lg shadow-sm">
+                                  {p.kategori || 'Produk'}
+                                </span>
+                              </div>
+
+                              <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                                <div>
+                                  <h4 className="font-serif font-bold text-sm text-[#1B365D] line-clamp-1 group-hover:text-[#C5A059] transition-colors leading-snug">
+                                    {p.namaProduk}
+                                  </h4>
+                                  <p className="text-[10px] text-[#8B7E66] font-medium mt-0.5 leading-none">
+                                    Oleh: <span className="font-bold">{p.namaPenjual}</span>
+                                  </p>
+                                  <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed mt-2">
+                                    {p.deskripsi}
+                                  </p>
+                                </div>
+
+                                <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
+                                  <div className="flex flex-col">
+                                    <span className="text-[8px] text-gray-400 font-bold uppercase">Harga Estimasi</span>
+                                    <span className="text-xs font-bold text-[#C5A059] font-mono leading-none mt-0.5">
+                                      {formatRupiah(p.harga)}
+                                    </span>
+                                  </div>
+
+                                  <a
+                                    href={`https://wa.me/${sanitizeWhatsApp(p.whatsappPenjual || '')}?text=${encodeURIComponent(`Halo Bapak/Ibu ${p.namaPenjual}, saya melihat produk "${p.namaProduk}" Anda di Beranda Website IPPI. Saya tertarik untuk memesan/bertanya.`)}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded-lg transition-colors flex items-center space-x-1 font-sans"
+                                  >
+                                    <span>Tanya WA</span>
+                                  </a>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
+
               </div>
             )}
 
@@ -1074,6 +1183,18 @@ export default function App() {
                   )}
                 </div>
               </div>
+            )}
+
+            {/* VIEW: LAPAK UMKM */}
+            {activeTab === 'UMKM' && (
+              <LapakUmkm
+                content={homeContent}
+                currentUser={currentUser}
+                onSave={(updatedContent) => {
+                  setHomeContent(updatedContent);
+                  saveStoredContent(updatedContent);
+                }}
+              />
             )}
 
             {/* VIEW 7: MANAGEMENT WORKSPACE PORTAL (RUANG KERJA MULTI-ROLE) */}

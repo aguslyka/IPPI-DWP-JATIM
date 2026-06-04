@@ -302,6 +302,47 @@ const INITIAL_CONTENT: HomepageContent = {
       deskripsi: 'Wadah sumbangsih naskah tulisan ilmiah populer di kancah nasional untuk memberikan masukan pembangunan ke pusat.',
       urutan: 3
     }
+  ],
+  umkmList: [
+    {
+      id: 'umkm1',
+      namaProduk: 'Batik Tulis Madura Klasik Gentongan',
+      namaPenjual: 'Ibu Hj. Aminah (Anggota Senior DPW)',
+      deskripsi: 'Batik motif pesisiran klasik yang diproses manual dengan canting tangan dan pewarnaan alami. Sangat halus, prestisius, dan nyaman dipakai untuk seragam kepengurusan maupun forum formal.',
+      harga: '350000',
+      imageUrl: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=600&auto=format&fit=crop',
+      videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      linkBeli: 'https://shopee.co.id',
+      whatsappPenjual: '085230996333',
+      kategori: 'Fashion & Batik',
+      urutan: 1
+    },
+    {
+      id: 'umkm2',
+      namaProduk: 'Minyak Gosok & Aromaterapi Herbal Sereh Merah',
+      namaPenjual: 'Bpk. Dr. Bambang (Purna Tugas Medis)',
+      deskripsi: 'Minyak gosok hasil sulingan sereh merah organik, cengkih pilihan, dan pala. Sangat berkhasiat melancarkan peredaran darah, meredakan nyeri sendi, masuk angin, dan pegal linu terutama bagi para senior aktif.',
+      harga: '45000',
+      imageUrl: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?q=80&w=600&auto=format&fit=crop',
+      videoUrl: '',
+      linkBeli: 'https://shopee.co.id',
+      whatsappPenjual: '082141656855',
+      kategori: 'Kesehatan & Herbal',
+      urutan: 2
+    },
+    {
+      id: 'umkm3',
+      namaProduk: 'Kopi Bubuk Robusta Premium Dampit',
+      namaPenjual: 'Ir. H. Mohammad Muslih (Mantan Ka. Pos Logistik)',
+      deskripsi: 'Kopi bubuk robusta murni pilihan dari perkebunan lereng Gunung Semeru Dampit Malang. Profil roasting medium-dark, menghasilkan aroma cokelat alami yang legit, tebal (bold body), dan rendah kadar asam.',
+      harga: '60000',
+      imageUrl: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=600&auto=format&fit=crop',
+      videoUrl: '',
+      linkBeli: 'https://shopee.co.id',
+      whatsappPenjual: '082145668301',
+      kategori: 'Kuliner & Camilan',
+      urutan: 3
+    }
   ]
 };
 
@@ -467,7 +508,23 @@ export function initializeFirestoreSync() {
         handleFirestoreError(error, OperationType.WRITE, 'config/main');
       }
     } else {
-      const config = snapshot.data() as OrgConfig;
+      let config = snapshot.data() as OrgConfig;
+      
+      // Auto-migrate outdated values from old DPP Pusat or other old placeholders to match newest user edits
+      if (
+        !config.namaSekretariat ||
+        config.namaSekretariat === 'Sekretariat DPP IPPI Pusat' ||
+        config.namaSekretariat.includes('Pusat') ||
+        (config.alamatSekretariat && config.alamatSekretariat.includes('Diponegoro')) ||
+        (config.noIjinPendirian && config.noIjinPendirian.includes('AHU-0012411')) ||
+        config.noTelp === '021-3901234' ||
+        config.email === 'dpp@ippi-pensiunan.or.id' ||
+        (config.noRekeningIppiBaris1 && config.noRekeningIppiBaris1.includes('1023048999'))
+      ) {
+        config = { ...config, ...INITIAL_CONFIG };
+        setDoc(doc(db, 'config', 'main'), config).catch(() => {});
+      }
+
       localStorage.setItem('ippi_config', JSON.stringify(config));
       notifyListeners();
     }
@@ -485,6 +542,8 @@ export function initializeFirestoreSync() {
       }
     } else {
       let content = snapshot.data() as HomepageContent;
+      let databaseNeedsUpdate = false;
+      
       const oldVisi1 = 'Menjadi organisasi pensiunan profesional terdepan yang aktif dalam pemberdayaan masyarakat, kemitraan strategis, serta peningkatan kesejahteraan rohani, jasmani, dan sosial para anggotanya.';
       const oldVisi2 = 'Menjadi organisasi bagi pensiunan profesional terdepan yang aktif dalam pemberdayaan masyarakat, kemitraan strategis, serta peningkatan kesejahteraan rohani, jasmani, sosial dan bisnis bagi para anggotanya.';
       const oldVisi3 = 'Menjadi organisasi pensiunan profesional terdepan yang aktif dalam pemberdayaan masyarakat, kemitraan strategis, peningkatan kesejahteraan rohani, jasmani dan sosial serta bisnis bagi para anggotanya.';
@@ -500,8 +559,18 @@ export function initializeFirestoreSync() {
         content.visiMisi.includes('organisasi bagi pensiunan')
       ) {
         content = { ...content, visiMisi: INITIAL_CONTENT.visiMisi };
+        databaseNeedsUpdate = true;
+      }
+
+      if (!content.umkmList) {
+        content = { ...content, umkmList: INITIAL_CONTENT.umkmList || [] };
+        databaseNeedsUpdate = true;
+      }
+
+      if (databaseNeedsUpdate) {
         setDoc(doc(db, 'content', 'main'), content).catch(() => {});
       }
+
       localStorage.setItem('ippi_content', JSON.stringify(content));
       notifyListeners();
     }
@@ -597,8 +666,28 @@ export function getStoredConfig(): OrgConfig {
     return INITIAL_CONFIG;
   }
   const parsed = JSON.parse(data);
+  let updated = false;
   if (!parsed.logoUrl) {
     parsed.logoUrl = INITIAL_CONFIG.logoUrl;
+    updated = true;
+  }
+
+  // Auto-migrate local storage configuration if it holds outdated DPP Pusat or placeholder values
+  if (
+    !parsed.namaSekretariat ||
+    parsed.namaSekretariat === 'Sekretariat DPP IPPI Pusat' ||
+    parsed.namaSekretariat.includes('Pusat') ||
+    (parsed.alamatSekretariat && parsed.alamatSekretariat.includes('Diponegoro')) ||
+    (parsed.noIjinPendirian && parsed.noIjinPendirian.includes('AHU-0012411')) ||
+    parsed.noTelp === '021-3901234' ||
+    parsed.email === 'dpp@ippi-pensiunan.or.id' ||
+    (parsed.noRekeningIppiBaris1 && parsed.noRekeningIppiBaris1.includes('1023048999'))
+  ) {
+    Object.assign(parsed, INITIAL_CONFIG);
+    updated = true;
+  }
+
+  if (updated) {
     localStorage.setItem('ippi_config', JSON.stringify(parsed));
   }
   return parsed;
@@ -645,6 +734,10 @@ export function getStoredContent(): HomepageContent {
   }
   if (!parsed.fokusList) {
     parsed.fokusList = INITIAL_CONTENT.fokusList || [];
+    updated = true;
+  }
+  if (!parsed.umkmList) {
+    parsed.umkmList = INITIAL_CONTENT.umkmList || [];
     updated = true;
   }
   

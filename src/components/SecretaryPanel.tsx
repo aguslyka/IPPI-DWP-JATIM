@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { HomepageContent, Member, OrgConfig } from '../types';
+import { HomepageContent, Member, OrgConfig, UserRole } from '../types';
 import { getStoredContent, saveStoredContent, getStoredMembers, saveStoredMembers, saveStoredConfig } from '../utils/storage';
 import { Edit, Save, Plus, Trash2, CheckCircle2, MessageSquare, PhoneCall, Printer } from 'lucide-react';
 import KopSurat from './KopSurat';
@@ -7,6 +7,7 @@ import AboutEditor from './editors/AboutEditor';
 import ProgramEditor from './editors/ProgramEditor';
 import BeritaEditor from './editors/BeritaEditor';
 import JurnalEditor from './editors/JurnalEditor';
+import LapakUmkm from './LapakUmkm';
 
 interface SecretaryPanelProps {
   config: OrgConfig;
@@ -24,7 +25,7 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
   }, [config]);
 
   // Subtab choice
-  const [activeSubTab, setActiveSubTab] = useState<'EDIT_HOME' | 'APPROVALS' | 'KOP' | 'TENTANG_KAMI' | 'PROG_KERJA' | 'BERITA' | 'JURNAL' | 'FOKUS_KONTRIBUSI'>('EDIT_HOME');
+  const [activeSubTab, setActiveSubTab] = useState<'EDIT_HOME' | 'APPROVALS' | 'KOP' | 'TENTANG_KAMI' | 'PROG_KERJA' | 'BERITA' | 'JURNAL' | 'FOKUS_KONTRIBUSI' | 'LAPAK_UMKM'>('EDIT_HOME');
 
   // Input states for adding new "Mengapa Bergabung" bullet
   const [newBullet, setNewBullet] = useState('');
@@ -512,6 +513,15 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
               }`}
             >
               ✏️ 5. Fokus Kontribusi
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveSubTab('LAPAK_UMKM')}
+              className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
+                activeSubTab === 'LAPAK_UMKM' ? 'bg-[#1B365D] text-white' : 'text-gray-500 hover:bg-gray-150'
+              }`}
+            >
+              ✏️ 6. Lapak UMKM
             </button>
           </div>
         </div>
@@ -1499,6 +1509,22 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {activeSubTab === 'LAPAK_UMKM' && content && (
+        <div className="space-y-6 text-left">
+          <LapakUmkm
+            content={content}
+            currentUser={{ role: UserRole.SEKRETARIS } as Member}
+            onSave={(updated) => {
+              setContent(updated);
+              saveStoredContent(updated);
+              onContentChange(updated);
+              setFeedback('Sukses: Produk Lapak UMKM berhasil diperbarui!');
+              setTimeout(() => setFeedback(null), 4000);
+            }}
+          />
         </div>
       )}
 

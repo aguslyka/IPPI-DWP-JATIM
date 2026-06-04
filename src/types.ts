@@ -102,6 +102,22 @@ export interface HomepageContent {
   beritaList?: BeritaItem[];
   jurnalList?: JurnalItem[];
   fokusList?: FokusKontribusi[];
+  umkmList?: UmkmProduct[];
+}
+
+export interface UmkmProduct {
+  id: string;
+  namaProduk: string;
+  namaPenjual: string;
+  deskripsi: string;
+  harga: number | string;
+  imageUrl?: string;
+  videoUrl?: string;
+  linkBeli?: string;
+  whatsappPenjual?: string;
+  kategori?: string;
+  urutan?: number;
+  isBeranda?: boolean;
 }
 
 export interface FokusKontribusi {
