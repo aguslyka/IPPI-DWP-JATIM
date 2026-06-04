@@ -4,11 +4,16 @@ import { Plus, Trash2, Edit2, Save, X, Paperclip, Download, Eye, FileText, Faceb
 
 interface ProgramEditorProps {
   content: HomepageContent;
-  onSave: (updated: HomepageContent) => void;
+  onSave: (updated: HomepageContent, actionType?: 'add' | 'edit' | 'delete') => void;
 }
 
 export default function ProgramEditor({ content, onSave }: ProgramEditorProps) {
   const [items, setItems] = useState<ProgramItem[]>(content.programList || []);
+
+  // Sync state with parent content when it changes (reactive sync)
+  React.useEffect(() => {
+    setItems(content.programList || []);
+  }, [content.programList]);
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [newKategori, setNewKategori] = useState('');
@@ -94,7 +99,8 @@ export default function ProgramEditor({ content, onSave }: ProgramEditorProps) {
 
     const updatedList = [...items, newItem].sort((a, b) => a.urutan - b.urutan);
     setItems(updatedList);
-    onSave({ ...content, programList: updatedList });
+    // berhasil ditambah
+    onSave({ ...content, programList: updatedList }, 'add');
 
     // Reset Form
     setNewKategori('');
@@ -155,7 +161,8 @@ export default function ProgramEditor({ content, onSave }: ProgramEditorProps) {
     }).sort((a, b) => a.urutan - b.urutan);
 
     setItems(updatedList);
-    onSave({ ...content, programList: updatedList });
+    // berhasil di rubah
+    onSave({ ...content, programList: updatedList }, 'edit');
     setEditingId(null);
     setEditFileState(null);
     setEditLinkFacebook('');
@@ -167,7 +174,7 @@ export default function ProgramEditor({ content, onSave }: ProgramEditorProps) {
     if (window.confirm(`Apakah Anda yakin ingin menghapus agenda/program kerja: "${judul}"?`)) {
       const updatedList = items.filter(item => item.id !== id);
       setItems(updatedList);
-      onSave({ ...content, programList: updatedList });
+      onSave({ ...content, programList: updatedList }, 'delete');
     }
   };
 

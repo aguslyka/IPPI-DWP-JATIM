@@ -4,11 +4,16 @@ import { Plus, Trash2, Edit2, Save, X, Paperclip, Download, Eye, FileText, Faceb
 
 interface BeritaEditorProps {
   content: HomepageContent;
-  onSave: (updated: HomepageContent) => void;
+  onSave: (updated: HomepageContent, actionType?: 'add' | 'edit' | 'delete') => void;
 }
 
 export default function BeritaEditor({ content, onSave }: BeritaEditorProps) {
   const [items, setItems] = useState<BeritaItem[]>(content.beritaList || []);
+
+  // Sync state with parent content when it changes (reactive sync)
+  React.useEffect(() => {
+    setItems(content.beritaList || []);
+  }, [content.beritaList]);
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [newJudul, setNewJudul] = useState('');
@@ -90,7 +95,8 @@ export default function BeritaEditor({ content, onSave }: BeritaEditorProps) {
 
     const updatedList = [newItem, ...items];
     setItems(updatedList);
-    onSave({ ...content, beritaList: updatedList });
+    // berhasil ditambah
+    onSave({ ...content, beritaList: updatedList }, 'add');
 
     // Reset Form
     setNewJudul('');
@@ -148,7 +154,8 @@ export default function BeritaEditor({ content, onSave }: BeritaEditorProps) {
     });
 
     setItems(updatedList);
-    onSave({ ...content, beritaList: updatedList });
+    // berhasil di rubah
+    onSave({ ...content, beritaList: updatedList }, 'edit');
     setEditingId(null);
     setEditFileState(null);
     setEditLinkFacebook('');
@@ -160,7 +167,7 @@ export default function BeritaEditor({ content, onSave }: BeritaEditorProps) {
     if (window.confirm(`Apakah Anda yakin ingin menghapus berita: "${judul}"?`)) {
       const updatedList = items.filter(item => item.id !== id);
       setItems(updatedList);
-      onSave({ ...content, beritaList: updatedList });
+      onSave({ ...content, beritaList: updatedList }, 'delete');
     }
   };
 

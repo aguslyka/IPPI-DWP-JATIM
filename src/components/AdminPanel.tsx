@@ -52,6 +52,19 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
   // Error/Success state
   const [feedback, setFeedback] = useState<{ status: 'ok' | 'error'; msg: string } | null>(null);
 
+  // Custom confirmation dialog state
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {}
+  });
+
   // Homepage activities management states for Admin
   const [homeContent, setHomeContent] = useState<HomepageContent | null>(null);
   const [isAddKegOpen, setIsAddKegOpen] = useState(false);
@@ -221,18 +234,24 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
 
   const handleDeleteStr = (id: string, nama: string) => {
     if (!homeContent) return;
-    if (confirm(`Apakah Anda yakin ingin menghapus "${nama}" dari struktur organisasi?`)) {
-      const currentList = homeContent.strukturList || [];
-      const updatedList = currentList.filter(item => item.id !== id);
-      const updated = {
-        ...homeContent,
-        strukturList: updatedList
-      };
-      setHomeContent(updated);
-      saveStoredContent(updated);
-      if (onContentChange) onContentChange(updated);
-      triggerFeedback('ok', 'Sukses: Struktur organisasi berhasil dihapus!');
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: 'Penghapusan Pengurus',
+      message: `Apakah Anda yakin ingin menghapus "${nama}" dari struktur organisasi?`,
+      onConfirm: () => {
+        const currentList = homeContent.strukturList || [];
+        const updatedList = currentList.filter(item => item.id !== id);
+        const updated = {
+          ...homeContent,
+          strukturList: updatedList
+        };
+        setHomeContent(updated);
+        saveStoredContent(updated);
+        if (onContentChange) onContentChange(updated);
+        triggerFeedback('ok', 'Sukses: Struktur organisasi berhasil dihapus!'); // berhasil dihapus
+        setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const handleAddKegiatan = () => {
@@ -362,18 +381,24 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
 
   const handleDeleteKeg = (id: string, judul: string) => {
     if (!homeContent) return;
-    if (confirm(`Apakah Anda yakin ingin menghapus foto kegiatan "${judul}"?`)) {
-      const currentKeg = homeContent.kegiatan || [];
-      const updatedKeg = currentKeg.filter(k => k.id !== id);
-      const updated = {
-        ...homeContent,
-        kegiatan: updatedKeg
-      };
-      setHomeContent(updated);
-      saveStoredContent(updated);
-      if (onContentChange) onContentChange(updated);
-      triggerFeedback('ok', 'Sukses: Foto kegiatan berhasil dihapus!');
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: 'Penghapusan Foto Kegiatan',
+      message: `Apakah Anda yakin ingin menghapus foto kegiatan "${judul}"?`,
+      onConfirm: () => {
+        const currentKeg = homeContent.kegiatan || [];
+        const updatedKeg = currentKeg.filter(k => k.id !== id);
+        const updated = {
+          ...homeContent,
+          kegiatan: updatedKeg
+        };
+        setHomeContent(updated);
+        saveStoredContent(updated);
+        if (onContentChange) onContentChange(updated);
+        triggerFeedback('ok', 'Sukses: Foto kegiatan berhasil dihapus!'); // berhasil dihapus
+        setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   // Manage Fokus Kontribusi
@@ -478,18 +503,24 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
 
   const handleDeleteFokus = (id: string, judul: string) => {
     if (!homeContent) return;
-    if (confirm(`Apakah Anda yakin ingin menghapus fokus kontribusi "${judul}"?`)) {
-      const currentFokus = homeContent.fokusList || [];
-      const updatedFokus = currentFokus.filter(f => f.id !== id);
-      const updated = {
-        ...homeContent,
-        fokusList: updatedFokus
-      };
-      setHomeContent(updated);
-      saveStoredContent(updated);
-      if (onContentChange) onContentChange(updated);
-      triggerFeedback('ok', 'Sukses: Fokus kontribusi berhasil dihapus!');
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: 'Penghapusan Fokus Kontribusi',
+      message: `Apakah Anda yakin ingin menghapus fokus kontribusi "${judul}"?`,
+      onConfirm: () => {
+        const currentFokus = homeContent.fokusList || [];
+        const updatedFokus = currentFokus.filter(f => f.id !== id);
+        const updated = {
+          ...homeContent,
+          fokusList: updatedFokus
+        };
+        setHomeContent(updated);
+        saveStoredContent(updated);
+        if (onContentChange) onContentChange(updated);
+        triggerFeedback('ok', 'Sukses: Fokus kontribusi berhasil dihapus!'); // berhasil dihapus
+        setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   // 1. Manage Config
@@ -569,13 +600,19 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
   };
 
   const handleDeleteUser = (id: string, name: string) => {
-    if (confirm(`Apakah Anda yakin ingin menghapus akun "${name}" secara permanen dari database IPPI?`)) {
-      const updated = members.filter((m) => m.id !== id);
-      saveStoredMembers(updated);
-      setMembers(updated);
-      triggerFeedback('ok', `Anggota "${name}" berhasil dihapus.`);
-      if (onMembersChange) onMembersChange();
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: 'Penghapusan Akun Anggota',
+      message: `Apakah Anda yakin ingin menghapus akun "${name}" secara permanen dari database IPPI?`,
+      onConfirm: () => {
+        const updated = members.filter((m) => m.id !== id);
+        saveStoredMembers(updated);
+        setMembers(updated);
+        triggerFeedback('ok', `Anggota "${name}" berhasil dihapus.`); // berhasil dihapus
+        if (onMembersChange) onMembersChange();
+        setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const handleApproveInline = (id: string) => {
@@ -633,11 +670,17 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
 
   // Clear All logs to reset
   const handleClearLogs = () => {
-    if (confirm('Apakah Anda ingin mengosongkan riwayat visitor log?')) {
-      saveStoredVisitors([]);
-      setVisitors([]);
-      triggerFeedback('ok', 'Riwayat visitor log berhasil dibersihkan.');
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: 'Pembersihan Visitor Log',
+      message: 'Apakah Anda ingin mengosongkan riwayat visitor log?',
+      onConfirm: () => {
+        saveStoredVisitors([]);
+        setVisitors([]);
+        triggerFeedback('ok', 'Riwayat visitor log berhasil dibersihkan.'); // berhasil dihapus
+        setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   if (!config) return <div className="text-center py-8">Memuat data admin...</div>;
@@ -2130,11 +2173,12 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
         <div className="bg-white rounded-2xl border border-[#E5E0D5] p-6 shadow-sm">
           <AboutEditor
             content={homeContent}
-            onSave={(updated) => {
+            onSave={(updated, actionType) => {
               setHomeContent(updated);
               saveStoredContent(updated);
               onContentChange(updated);
-              setFeedback({ status: 'ok', msg: 'Sukses: Konten Tentang Kami berhasil diperbarui!' });
+              const actionMsg = actionType === 'add' ? 'berhasil ditambah' : actionType === 'edit' ? 'berhasil di rubah' : 'berhasil dihapus';
+              setFeedback({ status: 'ok', msg: `Sukses: Konten Tentang Kami ${actionMsg}!` });
               setTimeout(() => setFeedback(null), 4000);
             }}
           />
@@ -2145,11 +2189,12 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
         <div className="bg-white rounded-2xl border border-[#E5E0D5] p-6 shadow-sm">
           <ProgramEditor
             content={homeContent}
-            onSave={(updated) => {
+            onSave={(updated, actionType) => {
               setHomeContent(updated);
               saveStoredContent(updated);
               onContentChange(updated);
-              setFeedback({ status: 'ok', msg: 'Sukses: Konten Program Kerja berhasil diperbarui!' });
+              const actionMsg = actionType === 'add' ? 'berhasil ditambah' : actionType === 'edit' ? 'berhasil di rubah' : 'berhasil dihapus';
+              setFeedback({ status: 'ok', msg: `Sukses: Konten Program Kerja ${actionMsg}!` });
               setTimeout(() => setFeedback(null), 4000);
             }}
           />
@@ -2160,11 +2205,12 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
         <div className="bg-white rounded-2xl border border-[#E5E0D5] p-6 shadow-sm">
           <BeritaEditor
             content={homeContent}
-            onSave={(updated) => {
+            onSave={(updated, actionType) => {
               setHomeContent(updated);
               saveStoredContent(updated);
               onContentChange(updated);
-              setFeedback({ status: 'ok', msg: 'Sukses: Konten Berita Resmi berhasil diperbarui!' });
+              const actionMsg = actionType === 'add' ? 'berhasil ditambah' : actionType === 'edit' ? 'berhasil di rubah' : 'berhasil dihapus';
+              setFeedback({ status: 'ok', msg: `Sukses: Konten Berita Resmi ${actionMsg}!` });
               setTimeout(() => setFeedback(null), 4000);
             }}
           />
@@ -2175,11 +2221,12 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
         <div className="bg-white rounded-2xl border border-[#E5E0D5] p-6 shadow-sm">
           <JurnalEditor
             content={homeContent}
-            onSave={(updated) => {
+            onSave={(updated, actionType) => {
               setHomeContent(updated);
               saveStoredContent(updated);
               onContentChange(updated);
-              setFeedback({ status: 'ok', msg: 'Sukses: Konten Jurnal Berkala berhasil diperbarui!' });
+              const actionMsg = actionType === 'add' ? 'berhasil ditambah' : actionType === 'edit' ? 'berhasil di rubah' : 'berhasil dihapus';
+              setFeedback({ status: 'ok', msg: `Sukses: Konten Jurnal Berkala ${actionMsg}!` });
               setTimeout(() => setFeedback(null), 4000);
             }}
           />
@@ -2645,6 +2692,56 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
                 className="px-4 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl text-xs font-bold transition cursor-pointer"
               >
                 Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* RENDER CUSTOM CONFIRMATION MODAL */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 bg-[#1B365D]/40 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-2xl border border-[#E5E0D5] p-6 max-w-md w-full shadow-2xl relative animate-in fade-in zoom-in duration-200 text-left">
+            <div className="flex items-start space-x-4">
+              <div className={`p-3 rounded-full border flex-shrink-0 ${
+                confirmModal.title.includes('Penghapusan') 
+                  ? 'bg-rose-50 border-rose-200 text-rose-600' 
+                  : 'bg-indigo-50 border-indigo-200 text-[#1B365D]'
+              }`}>
+                {confirmModal.title.includes('Penghapusan') ? (
+                  <Trash2 className="w-5 h-5" />
+                ) : (
+                  <Check className="w-5 h-5" />
+                )}
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-serif font-bold text-[#1B365D] mb-1">
+                  {confirmModal.title}
+                </h3>
+                <p className="text-xs text-gray-600 font-sans leading-relaxed">
+                  {confirmModal.message}
+                </p>
+              </div>
+            </div>
+            
+            <div className="mt-6 flex items-center justify-end space-x-2.5">
+              <button
+                type="button"
+                onClick={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+                className="px-4 py-2 text-[11px] font-bold border border-[#E5E0D5] hover:bg-slate-50 text-gray-500 rounded-xl transition-colors cursor-pointer"
+              >
+                Batal / Tidak
+              </button>
+              <button
+                type="button"
+                onClick={confirmModal.onConfirm}
+                className={`px-4.5 py-2 text-[11px] font-bold text-white rounded-xl shadow-md transition-all cursor-pointer hover:shadow-lg ${
+                  confirmModal.title.includes('Penghapusan')
+                    ? 'bg-rose-600 hover:bg-rose-700 active:scale-95'
+                    : 'bg-[#1B365D] hover:bg-[#254673] active:scale-95'
+                }`}
+              >
+                Yakin / Ya
               </button>
             </div>
           </div>

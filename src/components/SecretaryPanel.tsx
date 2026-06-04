@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { HomepageContent, Member, OrgConfig, UserRole } from '../types';
 import { getStoredContent, saveStoredContent, getStoredMembers, saveStoredMembers, saveStoredConfig, compressImage } from '../utils/storage';
-import { Edit, Save, Plus, Trash2, CheckCircle2, MessageSquare, PhoneCall, Printer, Paperclip, FileText, Facebook, Instagram, Youtube } from 'lucide-react';
+import { Edit, Save, Plus, Trash2, CheckCircle2, MessageSquare, PhoneCall, Printer, Paperclip, FileText, Facebook, Instagram, Youtube, Check } from 'lucide-react';
 import KopSurat from './KopSurat';
 import AboutEditor from './editors/AboutEditor';
 import ProgramEditor from './editors/ProgramEditor';
@@ -30,6 +30,19 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
   // Input states for adding new "Mengapa Bergabung" bullet
   const [newBullet, setNewBullet] = useState('');
   const [feedback, setFeedback] = useState<string | null>(null);
+
+  // Custom confirmation dialog state
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {}
+  });
 
   // Activity Photo states
   const [isAddKegOpen, setIsAddKegOpen] = useState(false);
@@ -203,19 +216,25 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
 
   const handleDeleteStr = (id: string, nama: string) => {
     if (!content) return;
-    if (confirm(`Apakah Anda yakin ingin menghapus "${nama}" dari struktur organisasi?`)) {
-      const currentList = content.strukturList || [];
-      const updatedList = currentList.filter(item => item.id !== id);
-      const updated = {
-        ...content,
-        strukturList: updatedList
-      };
-      setContent(updated);
-      saveStoredContent(updated);
-      onContentChange(updated);
-      setFeedback('Sukses: Struktur organisasi berhasil dihapus!');
-      setTimeout(() => setFeedback(null), 4000);
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: 'Penghapusan Pengurus',
+      message: `Apakah Anda yakin ingin menghapus "${nama}" dari struktur organisasi?`,
+      onConfirm: () => {
+        const currentList = content.strukturList || [];
+        const updatedList = currentList.filter(item => item.id !== id);
+        const updated = {
+          ...content,
+          strukturList: updatedList
+        };
+        setContent(updated);
+        saveStoredContent(updated);
+        onContentChange(updated);
+        setFeedback('Sukses: Struktur organisasi berhasil dihapus!'); // berhasil dihapus
+        setTimeout(() => setFeedback(null), 4000);
+        setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const handleAddKegiatan = () => {
@@ -343,19 +362,25 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
 
   const handleDeleteKeg = (id: string, judul: string) => {
     if (!content) return;
-    if (confirm(`Apakah Anda yakin ingin menghapus foto kegiatan "${judul}"?`)) {
-      const currentKeg = content.kegiatan || [];
-      const updatedKeg = currentKeg.filter(k => k.id !== id);
-      const updated = {
-        ...content,
-        kegiatan: updatedKeg
-      };
-      setContent(updated);
-      saveStoredContent(updated);
-      onContentChange(updated);
-      setFeedback('Sukses: Foto kegiatan berhasil dihapus!');
-      setTimeout(() => setFeedback(null), 4000);
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: 'Penghapusan Foto Kegiatan',
+      message: `Apakah Anda yakin ingin menghapus foto kegiatan "${judul}"?`,
+      onConfirm: () => {
+        const currentKeg = content.kegiatan || [];
+        const updatedKeg = currentKeg.filter(k => k.id !== id);
+        const updated = {
+          ...content,
+          kegiatan: updatedKeg
+        };
+        setContent(updated);
+        saveStoredContent(updated);
+        onContentChange(updated);
+        setFeedback('Sukses: Foto kegiatan berhasil dihapus!'); // berhasil dihapus
+        setTimeout(() => setFeedback(null), 4000);
+        setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   // Manage Fokus Kontribusi
@@ -458,19 +483,25 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
 
   const handleDeleteFokus = (id: string, judul: string) => {
     if (!content) return;
-    if (confirm(`Apakah Anda yakin ingin menghapus fokus kontribusi "${judul}"?`)) {
-      const currentFokus = content.fokusList || [];
-      const updatedFokus = currentFokus.filter(f => f.id !== id);
-      const updated = {
-        ...content,
-        fokusList: updatedFokus
-      };
-      setContent(updated);
-      saveStoredContent(updated);
-      if (onContentChange) onContentChange(updated);
-      setFeedback('Sukses: Fokus kontribusi berhasil dihapus!');
-      setTimeout(() => setFeedback(null), 4000);
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: 'Penghapusan Fokus Kontribusi',
+      message: `Apakah Anda yakin ingin menghapus fokus kontribusi "${judul}"?`,
+      onConfirm: () => {
+        const currentFokus = content.fokusList || [];
+        const updatedFokus = currentFokus.filter(f => f.id !== id);
+        const updated = {
+          ...content,
+          fokusList: updatedFokus
+        };
+        setContent(updated);
+        saveStoredContent(updated);
+        if (onContentChange) onContentChange(updated);
+        setFeedback('Sukses: Fokus kontribusi berhasil dihapus!'); // berhasil dihapus
+        setTimeout(() => setFeedback(null), 4000);
+        setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const handleSaveHomepage = (e: React.FormEvent) => {
@@ -1574,11 +1605,12 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
         <div className="bg-white rounded-2xl border border-[#E5E0D5] p-6 shadow-sm">
           <AboutEditor
             content={content}
-            onSave={(updated) => {
+            onSave={(updated, actionType) => {
               setContent(updated);
               saveStoredContent(updated);
               onContentChange(updated);
-              setFeedback('Sukses: Konten Tentang Kami berhasil diperbarui!');
+              const actionMsg = actionType === 'add' ? 'berhasil ditambah' : actionType === 'edit' ? 'berhasil di rubah' : 'berhasil dihapus';
+              setFeedback(`Sukses: Konten Tentang Kami ${actionMsg}!`);
               setTimeout(() => setFeedback(null), 4000);
             }}
           />
@@ -1589,11 +1621,12 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
         <div className="bg-white rounded-2xl border border-[#E5E0D5] p-6 shadow-sm">
           <ProgramEditor
             content={content}
-            onSave={(updated) => {
+            onSave={(updated, actionType) => {
               setContent(updated);
               saveStoredContent(updated);
               onContentChange(updated);
-              setFeedback('Sukses: Konten Program Kerja berhasil diperbarui!');
+              const actionMsg = actionType === 'add' ? 'berhasil ditambah' : actionType === 'edit' ? 'berhasil di rubah' : 'berhasil dihapus';
+              setFeedback(`Sukses: Konten Program Kerja ${actionMsg}!`);
               setTimeout(() => setFeedback(null), 4000);
             }}
           />
@@ -1604,11 +1637,12 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
         <div className="bg-white rounded-2xl border border-[#E5E0D5] p-6 shadow-sm">
           <BeritaEditor
             content={content}
-            onSave={(updated) => {
+            onSave={(updated, actionType) => {
               setContent(updated);
               saveStoredContent(updated);
               onContentChange(updated);
-              setFeedback('Sukses: Konten Berita Resmi berhasil diperbarui!');
+              const actionMsg = actionType === 'add' ? 'berhasil ditambah' : actionType === 'edit' ? 'berhasil di rubah' : 'berhasil dihapus';
+              setFeedback(`Sukses: Konten Berita Resmi ${actionMsg}!`);
               setTimeout(() => setFeedback(null), 4000);
             }}
           />
@@ -1619,11 +1653,12 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
         <div className="bg-white rounded-2xl border border-[#E5E0D5] p-6 shadow-sm">
           <JurnalEditor
             content={content}
-            onSave={(updated) => {
+            onSave={(updated, actionType) => {
               setContent(updated);
               saveStoredContent(updated);
               onContentChange(updated);
-              setFeedback('Sukses: Konten Jurnal Berkala berhasil diperbarui!');
+              const actionMsg = actionType === 'add' ? 'berhasil ditambah' : actionType === 'edit' ? 'berhasil di rubah' : 'berhasil dihapus';
+              setFeedback(`Sukses: Konten Jurnal Berkala ${actionMsg}!`);
               setTimeout(() => setFeedback(null), 4000);
             }}
           />
@@ -1994,6 +2029,56 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
               setTimeout(() => setFeedback(null), 4000);
             }}
           />
+        </div>
+      )}
+
+      {/* RENDER CUSTOM CONFIRMATION MODAL */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 bg-[#1B365D]/40 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-2xl border border-[#E5E0D5] p-6 max-w-md w-full shadow-2xl relative animate-in fade-in zoom-in duration-200 text-left">
+            <div className="flex items-start space-x-4">
+              <div className={`p-3 rounded-full border flex-shrink-0 ${
+                confirmModal.title.includes('Penghapusan') 
+                  ? 'bg-rose-50 border-rose-200 text-rose-600' 
+                  : 'bg-indigo-50 border-indigo-200 text-[#1B365D]'
+              }`}>
+                {confirmModal.title.includes('Penghapusan') ? (
+                  <Trash2 className="w-5 h-5" />
+                ) : (
+                  <Check className="w-5 h-5" />
+                )}
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-serif font-bold text-[#1B365D] mb-1">
+                  {confirmModal.title}
+                </h3>
+                <p className="text-xs text-gray-600 font-sans leading-relaxed">
+                  {confirmModal.message}
+                </p>
+              </div>
+            </div>
+            
+            <div className="mt-6 flex items-center justify-end space-x-2.5">
+              <button
+                type="button"
+                onClick={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+                className="px-4 py-2 text-[11px] font-bold border border-[#E5E0D5] hover:bg-slate-50 text-gray-500 rounded-xl transition-colors cursor-pointer"
+              >
+                Batal / Tidak
+              </button>
+              <button
+                type="button"
+                onClick={confirmModal.onConfirm}
+                className={`px-4.5 py-2 text-[11px] font-bold text-white rounded-xl shadow-md transition-all cursor-pointer hover:shadow-lg ${
+                  confirmModal.title.includes('Penghapusan')
+                    ? 'bg-rose-600 hover:bg-rose-700 active:scale-95'
+                    : 'bg-[#1B365D] hover:bg-[#254673] active:scale-95'
+                }`}
+              >
+                Yakin / Ya
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

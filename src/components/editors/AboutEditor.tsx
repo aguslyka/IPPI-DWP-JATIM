@@ -4,11 +4,16 @@ import { Plus, Trash2, Edit2, Save, X } from 'lucide-react';
 
 interface AboutEditorProps {
   content: HomepageContent;
-  onSave: (updated: HomepageContent) => void;
+  onSave: (updated: HomepageContent, actionType?: 'add' | 'edit' | 'delete') => void;
 }
 
 export default function AboutEditor({ content, onSave }: AboutEditorProps) {
   const [items, setItems] = useState<AboutItem[]>(content.aboutItems || []);
+
+  // Sync state with parent content when it changes (reactive sync)
+  React.useEffect(() => {
+    setItems(content.aboutItems || []);
+  }, [content.aboutItems]);
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [newJudul, setNewJudul] = useState('');
@@ -33,7 +38,8 @@ export default function AboutEditor({ content, onSave }: AboutEditorProps) {
 
     const updatedList = [...items, newItem].sort((a, b) => a.urutan - b.urutan);
     setItems(updatedList);
-    onSave({ ...content, aboutItems: updatedList });
+    // berhasil ditambah
+    onSave({ ...content, aboutItems: updatedList }, 'add');
 
     // Reset Form
     setNewJudul('');
@@ -66,7 +72,8 @@ export default function AboutEditor({ content, onSave }: AboutEditorProps) {
     }).sort((a, b) => a.urutan - b.urutan);
 
     setItems(updatedList);
-    onSave({ ...content, aboutItems: updatedList });
+    // berhasil di rubah
+    onSave({ ...content, aboutItems: updatedList }, 'edit');
     setEditingId(null);
   };
 
@@ -74,7 +81,7 @@ export default function AboutEditor({ content, onSave }: AboutEditorProps) {
     if (window.confirm(`Apakah Anda yakin ingin menghapus poin Tentang Kami: "${judul}"?`)) {
       const updatedList = items.filter(item => item.id !== id);
       setItems(updatedList);
-      onSave({ ...content, aboutItems: updatedList });
+      onSave({ ...content, aboutItems: updatedList }, 'delete');
     }
   };
 

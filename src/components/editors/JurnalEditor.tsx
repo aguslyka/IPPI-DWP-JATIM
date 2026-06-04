@@ -4,11 +4,16 @@ import { Plus, Trash2, Edit2, Save, X, Paperclip, Download, Eye, FileText, Faceb
 
 interface JurnalEditorProps {
   content: HomepageContent;
-  onSave: (updated: HomepageContent) => void;
+  onSave: (updated: HomepageContent, actionType?: 'add' | 'edit' | 'delete') => void;
 }
 
 export default function JurnalEditor({ content, onSave }: JurnalEditorProps) {
   const [items, setItems] = useState<JurnalItem[]>(content.jurnalList || []);
+
+  // Sync state with parent content when it changes (reactive sync)
+  React.useEffect(() => {
+    setItems(content.jurnalList || []);
+  }, [content.jurnalList]);
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [newJudul, setNewJudul] = useState('');
@@ -90,7 +95,8 @@ export default function JurnalEditor({ content, onSave }: JurnalEditorProps) {
 
     const updatedList = [newItem, ...items];
     setItems(updatedList);
-    onSave({ ...content, jurnalList: updatedList });
+    // berhasil ditambah
+    onSave({ ...content, jurnalList: updatedList }, 'add');
 
     // Reset Form
     setNewJudul('');
@@ -148,7 +154,8 @@ export default function JurnalEditor({ content, onSave }: JurnalEditorProps) {
     });
 
     setItems(updatedList);
-    onSave({ ...content, jurnalList: updatedList });
+    // berhasil di rubah
+    onSave({ ...content, jurnalList: updatedList }, 'edit');
     setEditingId(null);
     setEditFileState(null);
     setEditLinkFacebook('');
@@ -160,7 +167,7 @@ export default function JurnalEditor({ content, onSave }: JurnalEditorProps) {
     if (window.confirm(`Apakah Anda yakin ingin menghapus jurnal ilmiah: "${judul}"?`)) {
       const updatedList = items.filter(item => item.id !== id);
       setItems(updatedList);
-      onSave({ ...content, jurnalList: updatedList });
+      onSave({ ...content, jurnalList: updatedList }, 'delete');
     }
   };
 
