@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { HomepageContent, Member, OrgConfig, UserRole } from '../types';
-import { getStoredContent, saveStoredContent, getStoredMembers, saveStoredMembers, saveStoredConfig } from '../utils/storage';
+import { getStoredContent, saveStoredContent, getStoredMembers, saveStoredMembers, saveStoredConfig, compressImage } from '../utils/storage';
 import { Edit, Save, Plus, Trash2, CheckCircle2, MessageSquare, PhoneCall, Printer, Paperclip, FileText, Facebook, Instagram, Youtube } from 'lucide-react';
 import KopSurat from './KopSurat';
 import AboutEditor from './editors/AboutEditor';
@@ -874,12 +874,17 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
                           onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) {
-                              const reader = new FileReader();
-                              reader.onload = (event) => {
-                                const base64 = event.target?.result as string;
-                                setNewKegImage(base64);
-                              };
-                              reader.readAsDataURL(file);
+                              compressImage(file)
+                                .then(base64 => setNewKegImage(base64))
+                                .catch(err => {
+                                  console.error("Error compressing gallery image:", err);
+                                  const reader = new FileReader();
+                                  reader.onload = (event) => {
+                                    const base64 = event.target?.result as string;
+                                    setNewKegImage(base64);
+                                  };
+                                  reader.readAsDataURL(file);
+                                });
                             }
                           }}
                           className="block w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-[#1B365D]/10 file:text-[#1B365D]"
@@ -1059,12 +1064,17 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
                           onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) {
-                              const reader = new FileReader();
-                              reader.onload = (event) => {
-                                const base64 = event.target?.result as string;
-                                setEditKegImage(base64);
-                              };
-                              reader.readAsDataURL(file);
+                              compressImage(file)
+                                .then(base64 => setEditKegImage(base64))
+                                .catch(err => {
+                                  console.error("Error compressing edit gallery image:", err);
+                                  const reader = new FileReader();
+                                  reader.onload = (event) => {
+                                    const base64 = event.target?.result as string;
+                                    setEditKegImage(base64);
+                                  };
+                                  reader.readAsDataURL(file);
+                                });
                             }
                           }}
                           className="block w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-[#1B365D]/10 file:text-[#1B365D]"
@@ -1312,12 +1322,17 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                            const reader = new FileReader();
-                            reader.onload = (event) => {
-                              const base64 = event.target?.result as string;
-                              setNewStrPhoto(base64);
-                            };
-                            reader.readAsDataURL(file);
+                            compressImage(file)
+                              .then(base64 => setNewStrPhoto(base64))
+                              .catch(err => {
+                                console.error("Error compressing structure photo:", err);
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                  const base64 = event.target?.result as string;
+                                  setNewStrPhoto(base64);
+                                };
+                                reader.readAsDataURL(file);
+                              });
                           }
                         }}
                         className="block w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-[#1B365D]/10 file:text-[#1B365D]"
@@ -1400,12 +1415,17 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                            const reader = new FileReader();
-                            reader.onload = (event) => {
-                              const base64 = event.target?.result as string;
-                              setEditStrPhoto(base64);
-                            };
-                            reader.readAsDataURL(file);
+                            compressImage(file)
+                              .then(base64 => setEditStrPhoto(base64))
+                              .catch(err => {
+                                console.error("Error compressing edit structure photo:", err);
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                  const base64 = event.target?.result as string;
+                                  setEditStrPhoto(base64);
+                                };
+                                reader.readAsDataURL(file);
+                              });
                           }
                         }}
                         className="block w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-[#1B365D]/10 file:text-[#1B365D]"

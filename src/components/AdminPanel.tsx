@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { OrgConfig, Member, VisitorLog, UserRole, JenisKelamin, Agama, HomepageContent } from '../types';
-import { getStoredConfig, saveStoredConfig, getStoredMembers, saveStoredMembers, getStoredVisitors, saveStoredVisitors, logVisitorAction, getStoredContent, saveStoredContent } from '../utils/storage';
+import { getStoredConfig, saveStoredConfig, getStoredMembers, saveStoredMembers, getStoredVisitors, saveStoredVisitors, logVisitorAction, getStoredContent, saveStoredContent, compressImage } from '../utils/storage';
 import { Settings, Users, History, Check, Shield, Trash2, Edit2, Plus, RefreshCw, X, Image, Paperclip, FileText, Facebook, Instagram, Youtube } from 'lucide-react';
 import AboutEditor from './editors/AboutEditor';
 import ProgramEditor from './editors/ProgramEditor';
@@ -819,12 +819,17 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) {
-                          const reader = new FileReader();
-                          reader.onload = (event) => {
-                            const base64 = event.target?.result as string;
-                            setConfig({ ...config, logoUrl: base64 });
-                          };
-                          reader.readAsDataURL(file);
+                          compressImage(file)
+                            .then(base64 => setConfig({ ...config, logoUrl: base64 }))
+                            .catch(err => {
+                              console.error("Error compressing logo image:", err);
+                              const reader = new FileReader();
+                              reader.onload = (event) => {
+                                const base64 = event.target?.result as string;
+                                setConfig({ ...config, logoUrl: base64 });
+                              };
+                              reader.readAsDataURL(file);
+                            });
                         }
                       }}
                       className="block w-full text-xs text-gray-500
@@ -1452,12 +1457,17 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
                           onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) {
-                              const reader = new FileReader();
-                              reader.onload = (event) => {
-                                const base64 = event.target?.result as string;
-                                setNewKegImage(base64);
-                              };
-                              reader.readAsDataURL(file);
+                              compressImage(file)
+                                .then(base64 => setNewKegImage(base64))
+                                .catch(err => {
+                                  console.error("Error compressing gallery image:", err);
+                                  const reader = new FileReader();
+                                  reader.onload = (event) => {
+                                    const base64 = event.target?.result as string;
+                                    setNewKegImage(base64);
+                                  };
+                                  reader.readAsDataURL(file);
+                                });
                             }
                           }}
                           className="block w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-[#1B365D]/10 file:text-[#1B365D]"
@@ -1638,12 +1648,17 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
                           onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) {
-                              const reader = new FileReader();
-                              reader.onload = (event) => {
-                                const base64 = event.target?.result as string;
-                                setEditKegImage(base64);
-                              };
-                              reader.readAsDataURL(file);
+                              compressImage(file)
+                                .then(base64 => setEditKegImage(base64))
+                                .catch(err => {
+                                  console.error("Error compressing edit gallery image:", err);
+                                  const reader = new FileReader();
+                                  reader.onload = (event) => {
+                                    const base64 = event.target?.result as string;
+                                    setEditKegImage(base64);
+                                  };
+                                  reader.readAsDataURL(file);
+                                });
                             }
                           }}
                           className="block w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-[#1B365D]/10 file:text-[#1B365D]"
@@ -1938,12 +1953,17 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                            const reader = new FileReader();
-                            reader.onload = (event) => {
-                              const base64 = event.target?.result as string;
-                              setNewStrPhoto(base64);
-                            };
-                            reader.readAsDataURL(file);
+                            compressImage(file)
+                              .then(base64 => setNewStrPhoto(base64))
+                              .catch(err => {
+                                console.error("Error compressing structure photo:", err);
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                  const base64 = event.target?.result as string;
+                                  setNewStrPhoto(base64);
+                                };
+                                reader.readAsDataURL(file);
+                              });
                           }
                         }}
                         className="block w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-[#1B365D]/10 file:text-[#1B365D]"
@@ -2026,12 +2046,17 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                            const reader = new FileReader();
-                            reader.onload = (event) => {
-                              const base64 = event.target?.result as string;
-                              setEditStrPhoto(base64);
-                            };
-                            reader.readAsDataURL(file);
+                            compressImage(file)
+                              .then(base64 => setEditStrPhoto(base64))
+                              .catch(err => {
+                                console.error("Error compressing edit structure photo:", err);
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                  const base64 = event.target?.result as string;
+                                  setEditStrPhoto(base64);
+                                };
+                                reader.readAsDataURL(file);
+                              });
                           }
                         }}
                         className="block w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-[#1B365D]/10 file:text-[#1B365D]"
