@@ -40,7 +40,10 @@ import {
   Paperclip,
   Facebook,
   Instagram,
-  Youtube
+  Youtube,
+  Video,
+  ExternalLink,
+  MessageCircle
 } from 'lucide-react';
 
 function getEmbedUrl(url: string | undefined): string {
@@ -893,52 +896,103 @@ export default function App() {
                             return val;
                           };
 
+                          const hasVideo = !!p.videoUrl;
+
                           return (
                             <div 
                               key={p.id}
-                              className="group bg-white rounded-2xl border border-[#E5E0D5] overflow-hidden flex flex-col hover:shadow-md transition-all duration-300 text-left relative"
+                              className="group bg-white rounded-2xl border border-[#E5E0D5] overflow-hidden flex flex-col hover:shadow-lg transition-all duration-300 text-left relative"
                             >
-                              <div className="relative aspect-video w-full bg-slate-50 overflow-hidden">
+                              {/* Product Image Stage */}
+                              <div className="relative aspect-video w-full bg-slate-150 overflow-hidden">
                                 <img
                                   src={p.imageUrl || 'https://images.unsplash.com/photo-1546213290-e1b7610339e5?q=80&w=600&auto=format&fit=crop'}
                                   alt={p.namaProduk}
                                   referrerPolicy="no-referrer"
-                                  className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                 />
-                                <span className="absolute top-3 left-3 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-white bg-[#1B365D]/95 backdrop-blur-xs rounded-lg shadow-sm">
-                                  {p.kategori || 'Produk'}
-                                </span>
+                                
+                                {/* Category Badge & Beranda Badge status */}
+                                <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start z-10 font-sans">
+                                  <span className="px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-white bg-[#1B365D]/95 backdrop-blur-xs rounded-lg shadow-sm">
+                                    {p.kategori || 'Produk'}
+                                  </span>
+                                  <span className="px-2 py-0.5 text-[8.5px] font-bold uppercase tracking-wider text-white bg-amber-500 rounded-md shadow-xs flex items-center gap-0.5">
+                                    ★ Terpilih di Beranda
+                                  </span>
+                                </div>
+
+                                {/* Video Play Badge (If Youtube exists) */}
+                                {hasVideo && (
+                                  <a
+                                    href={p.videoUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="absolute bottom-3 right-3 p-2 bg-rose-600 hover:bg-rose-700 text-white rounded-full shadow-md transition-all cursor-pointer active:scale-90 flex items-center justify-center group/vid"
+                                    title="Tonton Video Promosi"
+                                  >
+                                    <Video className="w-3.5 h-3.5 mr-1" />
+                                    <span className="text-[9px] font-bold pr-1">Video</span>
+                                  </a>
+                                )}
                               </div>
 
-                              <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-                                <div>
+                              {/* Content Panel */}
+                              <div className="p-4.5 flex-1 flex flex-col justify-between space-y-4">
+                                <div className="space-y-2">
                                   <h4 className="font-serif font-bold text-sm text-[#1B365D] line-clamp-1 group-hover:text-[#C5A059] transition-colors leading-snug">
                                     {p.namaProduk}
                                   </h4>
-                                  <p className="text-[10px] text-[#8B7E66] font-medium mt-0.5 leading-none">
+                                  <p className="text-[10px] text-[#8B7E66] font-medium leading-relaxed">
                                     Oleh: <span className="font-bold">{p.namaPenjual}</span>
                                   </p>
-                                  <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed mt-2">
+                                  <p className="text-xs text-gray-500 line-clamp-3 leading-relaxed">
                                     {p.deskripsi}
                                   </p>
                                 </div>
 
-                                <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
-                                  <div className="flex flex-col">
-                                    <span className="text-[8px] text-gray-400 font-bold uppercase">Harga Estimasi</span>
-                                    <span className="text-xs font-bold text-[#C5A059] font-mono leading-none mt-0.5">
+                                <div className="space-y-3.5 pt-2 border-t border-gray-100">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[10px] text-gray-400 font-bold uppercase">Harga Estimasi</span>
+                                    <span className="text-sm font-bold text-[#C5A059] font-mono">
                                       {formatRupiah(p.harga)}
                                     </span>
                                   </div>
 
-                                  <a
-                                    href={`https://wa.me/${sanitizeWhatsApp(p.whatsappPenjual || '')}?text=${encodeURIComponent(`Halo Bapak/Ibu ${p.namaPenjual}, saya melihat produk "${p.namaProduk}" Anda di Beranda Website IPPI. Saya tertarik untuk memesan/bertanya.`)}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded-lg transition-colors flex items-center space-x-1 font-sans"
-                                  >
-                                    <span>Tanya WA</span>
-                                  </a>
+                                  {/* Order Action Buttons Row */}
+                                  <div className="grid grid-cols-2 gap-2">
+                                    {/* WhatsApp Button */}
+                                    <a
+                                      href={`https://wa.me/${sanitizeWhatsApp(p.whatsappPenjual || '')}?text=${encodeURIComponent(`Halo Bapak/Ibu ${p.namaPenjual}, saya melihat produk "${p.namaProduk}" Anda di Beranda Website IPPI. Saya tertarik untuk memesan/bertanya.`)}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="flex items-center justify-center space-x-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 hover:shadow-xs active:scale-95 text-white text-[10px] font-bold rounded-xl transition-all text-center"
+                                    >
+                                      <MessageCircle className="w-3.5 h-3.5 shrink-0" />
+                                      <span>Tanya WA</span>
+                                    </a>
+
+                                    {/* Buy Tautan / Shopee Affiliate */}
+                                    {p.linkBeli ? (
+                                      <a
+                                        href={p.linkBeli}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="flex items-center justify-center space-x-1 px-3 py-2 border border-orange-200 hover:border-orange-300 text-orange-600 bg-orange-50/50 hover:bg-orange-50 active:scale-95 text-[10px] font-bold rounded-xl transition-all text-center font-sans"
+                                      >
+                                        <span>Beli Olshop</span>
+                                        <ExternalLink className="w-3 h-3 shrink-0" />
+                                      </a>
+                                    ) : (
+                                      <button
+                                        disabled
+                                        className="flex items-center justify-center space-x-1 px-3 py-2 border border-gray-100 text-gray-400 bg-slate-50 text-[10px] font-bold rounded-xl cursor-not-allowed opacity-70"
+                                        title="Melalui jalur WhatsApp"
+                                      >
+                                        <span>Offline/WA saja</span>
+                                      </button>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </div>
