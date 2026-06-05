@@ -15,6 +15,19 @@ export default function ProgramEditor({ content, onSave }: ProgramEditorProps) {
     setItems(content.programList || []);
   }, [content.programList]);
 
+  // Custom confirmation dialog state
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {}
+  });
+
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [newKategori, setNewKategori] = useState('');
   const [newJudul, setNewJudul] = useState('');
@@ -171,11 +184,17 @@ export default function ProgramEditor({ content, onSave }: ProgramEditorProps) {
   };
 
   const handleDelete = (id: string, judul: string) => {
-    if (window.confirm(`Apakah Anda yakin ingin menghapus agenda/program kerja: "${judul}"?`)) {
-      const updatedList = items.filter(item => item.id !== id);
-      setItems(updatedList);
-      onSave({ ...content, programList: updatedList }, 'delete');
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: 'Penghapusan Agenda / Program Kerja',
+      message: `Apakah Anda yakin ingin menghapus agenda/program kerja: "${judul}"?`,
+      onConfirm: () => {
+        const updatedList = items.filter(item => item.id !== id);
+        setItems(updatedList);
+        onSave({ ...content, programList: updatedList }, 'delete');
+        setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   return (
