@@ -525,12 +525,17 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
 
   // 1. Manage Config
 
-  const handleConfigSubmit = (e: React.FormEvent) => {
+  const handleConfigSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!config) return;
-    saveStoredConfig(config);
-    onConfigChange(config);
-    triggerFeedback('ok', 'Sukses: Pengaturan profil sekretariat nasional IPPI berhasil disimpan!');
+    try {
+      triggerFeedback('ok', 'Sedang menyimpan perubahan...');
+      await saveStoredConfig(config);
+      onConfigChange(config);
+      triggerFeedback('ok', 'Sukses: Pengaturan profil sekretariat nasional IPPI berhasil disimpan!');
+    } catch (err) {
+      triggerFeedback('error', 'Gagal menyimpan pengaturan: ' + (err instanceof Error ? err.message : String(err)));
+    }
   };
 
   // 2. Manage Users (Create / Update / Delete)

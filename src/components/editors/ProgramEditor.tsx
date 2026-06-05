@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { HomepageContent, ProgramItem } from '../../types';
 import { Plus, Trash2, Edit2, Save, X, Paperclip, Download, Eye, FileText, Facebook, Instagram, Youtube, Link } from 'lucide-react';
 
@@ -11,11 +11,11 @@ export default function ProgramEditor({ content, onSave }: ProgramEditorProps) {
   const [items, setItems] = useState<ProgramItem[]>(content.programList || []);
 
   // Sync state with parent content when it changes (reactive sync)
-  React.useEffect(() => {
+  useEffect(() => {
     setItems(content.programList || []);
   }, [content.programList]);
 
-  // Custom confirmation dialog state
+  // State dialog konfirmasi modal
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     title: string;
@@ -27,6 +27,8 @@ export default function ProgramEditor({ content, onSave }: ProgramEditorProps) {
     message: '',
     onConfirm: () => {}
   });
+
+  // ... (Di bawah ini adalah tempat fungsi handleAdd, handleSaveEdit, dan handleDelete Anda dimulai)
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [newKategori, setNewKategori] = useState('');
@@ -112,7 +114,6 @@ export default function ProgramEditor({ content, onSave }: ProgramEditorProps) {
 
     const updatedList = [...items, newItem].sort((a, b) => a.urutan - b.urutan);
     setItems(updatedList);
-    // berhasil ditambah
     onSave({ ...content, programList: updatedList }, 'add');
 
     // Reset Form
@@ -149,7 +150,7 @@ export default function ProgramEditor({ content, onSave }: ProgramEditorProps) {
     }
   };
 
-  const handleSaveEdit = (e: React.FormEvent) => {
+const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editJudul.trim() || !editKategori.trim()) return;
 
@@ -174,7 +175,6 @@ export default function ProgramEditor({ content, onSave }: ProgramEditorProps) {
     }).sort((a, b) => a.urutan - b.urutan);
 
     setItems(updatedList);
-    // berhasil di rubah
     onSave({ ...content, programList: updatedList }, 'edit');
     setEditingId(null);
     setEditFileState(null);
@@ -188,7 +188,7 @@ export default function ProgramEditor({ content, onSave }: ProgramEditorProps) {
       isOpen: true,
       title: 'Penghapusan Agenda / Program Kerja',
       message: `Apakah Anda yakin ingin menghapus agenda/program kerja: "${judul}"?`,
-      onConfirm: () => {
+    onConfirm: () => {
         const updatedList = items.filter(item => item.id !== id);
         setItems(updatedList);
         onSave({ ...content, programList: updatedList }, 'delete');
@@ -196,7 +196,7 @@ export default function ProgramEditor({ content, onSave }: ProgramEditorProps) {
       }
     });
   };
-
+  
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center border-b border-gray-100 pb-3">

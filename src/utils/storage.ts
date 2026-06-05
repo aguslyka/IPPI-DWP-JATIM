@@ -471,6 +471,14 @@ const INITIAL_VISITORS: VisitorLog[] = [
 import { db, handleFirestoreError, OperationType } from './firebase';
 import { collection, onSnapshot, doc, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 
+/**
+ * Sanitizes object data, recursively removing any undefined properties to meet strict Firestore schema constraints.
+ */
+export function sanitizeFirestoreData<T>(obj: T): T {
+  if (obj === undefined || obj === null) return null as any;
+  return JSON.parse(JSON.stringify(obj)) as T;
+}
+
 // Callback listener pattern for reactive user interfaces
 type StorageUpdateCallback = () => void;
 let updateListeners: StorageUpdateCallback[] = [];
@@ -493,6 +501,7 @@ function notifyListeners() {
   window.dispatchEvent(new Event('ippi_storage_updated'));
 }
 
+let cachedContent: HomepageContent | null = null;
 let syncStarted = false;
 
 export function initializeFirestoreSync() {
@@ -503,7 +512,8 @@ export function initializeFirestoreSync() {
   onSnapshot(collection(db, 'members'), async (snapshot) => {
     if (snapshot.empty) {
       try {
-        for (const m of INITIAL_MEMBERS) {
+        const list = getStoredMembers();
+        for (const m of list) {
           await setDoc(doc(db, 'members', m.id), m);
         }
       } catch (error) {
@@ -525,7 +535,8 @@ export function initializeFirestoreSync() {
   onSnapshot(doc(db, 'config', 'main'), async (snapshot) => {
     if (!snapshot.exists()) {
       try {
-        await setDoc(doc(db, 'config', 'main'), INITIAL_CONFIG);
+        const currentConfig = getStoredConfig();
+        await setDoc(doc(db, 'config', 'main'), currentConfig);
       } catch (error) {
         handleFirestoreError(error, OperationType.WRITE, 'config/main');
       }
@@ -554,57 +565,129 @@ export function initializeFirestoreSync() {
     handleFirestoreError(error, OperationType.GET, 'config/main');
   });
 
-  // 3. Content Sync
-  onSnapshot(doc(db, 'content', 'main'), async (snapshot) => {
-    if (!snapshot.exists()) {
-      try {
-        await setDoc(doc(db, 'content', 'main'), INITIAL_CONTENT);
-      } catch (error) {
-        handleFirestoreError(error, OperationType.WRITE, 'content/main');
-      }
-    } else {
-      let content = snapshot.data() as HomepageContent;
-      let databaseNeedsUpdate = false;
-      
-      const oldVisi1 = 'Menjadi organisasi pensiunan profesional terdepan yang aktif dalam pemberdayaan masyarakat, kemitraan strategis, serta peningkatan kesejahteraan rohani, jasmani, dan sosial para anggotanya.';
-      const oldVisi2 = 'Menjadi organisasi bagi pensiunan profesional terdepan yang aktif dalam pemberdayaan masyarakat, kemitraan strategis, serta peningkatan kesejahteraan rohani, jasmani, sosial dan bisnis bagi para anggotanya.';
-      const oldVisi3 = 'Menjadi organisasi pensiunan profesional terdepan yang aktif dalam pemberdayaan masyarakat, kemitraan strategis, peningkatan kesejahteraan rohani, jasmani dan sosial serta bisnis bagi para anggotanya.';
-      const oldVisi4 = 'Menjadi organisasi pensiunan profesional terdepan yang aktif dalam pemberdayaan masyarakat, kemitraan strategis, peningkatan kesejahteraan rohani, jasmani, dan sosial dan bisnis bagi para anggotanya.';
-      if (
-        !content.visiMisi || 
-        content.visiMisi === oldVisi1 || 
-        content.visiMisi === oldVisi2 || 
-        content.visiMisi === oldVisi3 || 
-        content.visiMisi === oldVisi4 || 
-        content.visiMisi.includes('dan sosial serta bisnis') || 
-        content.visiMisi.includes('dan sosial dan bisnis') || 
-        content.visiMisi.includes('organisasi bagi pensiunan')
-      ) {
-        content = { ...content, visiMisi: INITIAL_CONTENT.visiMisi };
-        databaseNeedsUpdate = true;
-      }
-
-      if (!content.umkmList) {
-        content = { ...content, umkmList: INITIAL_CONTENT.umkmList || [] };
-        databaseNeedsUpdate = true;
-      }
-
-      if (databaseNeedsUpdate) {
-        setDoc(doc(db, 'content', 'main'), content).catch(() => {});
-      }
-
-      localStorage.setItem('ippi_content', JSON.stringify(content));
-      notifyListeners();
+  // 3. Content Sync (Robust Split Document Architecture)
+  const contentDocs = [
+    { 
+      docId: 'main', 
+      field: null, 
+      getLocal: (c: HomepageContent) => ({
+        heroTitle: c.heroTitle || INITIAL_CONTENT.heroTitle,
+        heroSub: c.heroSub || INITIAL_CONTENT.heroSub,
+        heroText: c.heroText || INITIAL_CONTENT.heroText,
+        visiMisi: c.visiMisi || INITIAL_CONTENT.visiMisi,
+        mengapaBergabung: c.mengapaBergabung || INITIAL_CONTENT.mengapaBergabung,
+      })
+    },
+    { 
+      docId: 'about_items', 
+      field: 'aboutItems' as const, 
+      getLocal: (c: HomepageContent) => c.aboutItems || INITIAL_CONTENT.aboutItems || []
+    },
+    { 
+      docId: 'program_kerja', 
+      field: 'programList' as const, 
+      getLocal: (c: HomepageContent) => c.programList || INITIAL_CONTENT.programList || []
+    },
+    { 
+      docId: 'galeri_kegiatan', 
+      field: 'kegiatan' as const, 
+      getLocal: (c: HomepageContent) => c.kegiatan || INITIAL_CONTENT.kegiatan || []
+    },
+    { 
+      docId: 'berita', 
+      field: 'beritaList' as const, 
+      getLocal: (c: HomepageContent) => c.beritaList || INITIAL_CONTENT.beritaList || []
+    },
+    { 
+      docId: 'jurnal_list', 
+      field: 'jurnalList' as const, 
+      getLocal: (c: HomepageContent) => c.jurnalList || INITIAL_CONTENT.jurnalList || []
+    },
+    { 
+      docId: 'struktur_list', 
+      field: 'strukturList' as const, 
+      getLocal: (c: HomepageContent) => c.strukturList || INITIAL_CONTENT.strukturList || []
+    },
+    { 
+      docId: 'fokus_kontribusi', 
+      field: 'fokusList' as const, 
+      getLocal: (c: HomepageContent) => c.fokusList || INITIAL_CONTENT.fokusList || []
+    },
+    { 
+      docId: 'umkm_list', 
+      field: 'umkmList' as const, 
+      getLocal: (c: HomepageContent) => c.umkmList || INITIAL_CONTENT.umkmList || []
     }
-  }, (error) => {
-    handleFirestoreError(error, OperationType.GET, 'content/main');
+  ];
+
+  contentDocs.forEach(({ docId, field, getLocal }) => {
+    onSnapshot(doc(db, 'content', docId), async (snapshot) => {
+      if (!snapshot.exists()) {
+        try {
+          const currentContent = getStoredContent();
+          const localVal = getLocal(currentContent);
+          const payload = field ? { list: localVal } : localVal;
+          await setDoc(doc(db, 'content', docId), payload);
+        } catch (error) {
+          handleFirestoreError(error, OperationType.WRITE, `content/${docId}`);
+        }
+      } else {
+        const data = snapshot.data();
+        if (!cachedContent) {
+          cachedContent = getStoredContent();
+        }
+
+        if (!field) {
+          // main info update
+          let visiMisiText = data?.visiMisi || INITIAL_CONTENT.visiMisi;
+          const oldVisi1 = 'Menjadi organisasi pensiunan profesional terdepan yang aktif dalam pemberdayaan masyarakat, kemitraan strategis, serta peningkatan kesejahteraan rohani, jasmani, dan sosial para anggotanya.';
+          const oldVisi2 = 'Menjadi organisasi bagi pensiunan profesional terdepan yang aktif dalam pemberdayaan masyarakat, kemitraan strategis, serta peningkatan kesejahteraan rohani, jasmani, sosial dan bisnis bagi para anggotanya.';
+          const oldVisi3 = 'Menjadi organisasi pensiunan profesional terdepan yang aktif dalam pemberdayaan masyarakat, kemitraan strategis, peningkatan kesejahteraan rohani, jasmani dan sosial serta bisnis bagi para anggotanya.';
+          const oldVisi4 = 'Menjadi organisasi pensiunan profesional terdepan yang aktif dalam pemberdayaan masyarakat, kemitraan strategis, peningkatan kesejahteraan rohani, jasmani, dan sosial dan bisnis bagi para anggotanya.';
+          if (
+            !visiMisiText || 
+            visiMisiText === oldVisi1 || 
+            visiMisiText === oldVisi2 || 
+            visiMisiText === oldVisi3 || 
+            visiMisiText === oldVisi4 || 
+            visiMisiText.includes('dan sosial serta bisnis') || 
+            visiMisiText.includes('dan sosial dan bisnis') || 
+            visiMisiText.includes('organisasi bagi pensiunan')
+          ) {
+            visiMisiText = INITIAL_CONTENT.visiMisi;
+          }
+
+          cachedContent = {
+            ...cachedContent,
+            heroTitle: data?.heroTitle || INITIAL_CONTENT.heroTitle,
+            heroSub: data?.heroSub || INITIAL_CONTENT.heroSub,
+            heroText: data?.heroText || INITIAL_CONTENT.heroText,
+            visiMisi: visiMisiText,
+            mengapaBergabung: data?.mengapaBergabung || INITIAL_CONTENT.mengapaBergabung,
+          };
+        } else {
+          // list array update
+          const list = Array.isArray(data?.list) ? data.list : [];
+          cachedContent = {
+            ...cachedContent,
+            [field]: list
+          };
+        }
+
+        localStorage.setItem('ippi_content', JSON.stringify(cachedContent));
+        notifyListeners();
+      }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, `content/${docId}`);
+    });
   });
 
   // 4. Transactions Sync
   onSnapshot(collection(db, 'transactions'), async (snapshot) => {
     if (snapshot.empty) {
       try {
-        for (const tx of INITIAL_TRANSACTIONS) {
+        const list = getStoredTransactions();
+        for (const tx of list) {
           await setDoc(doc(db, 'transactions', tx.id), tx);
         }
       } catch (error) {
@@ -627,7 +710,8 @@ export function initializeFirestoreSync() {
   onSnapshot(doc(db, 'config', 'neraca'), async (snapshot) => {
     if (!snapshot.exists()) {
       try {
-        await setDoc(doc(db, 'config', 'neraca'), INITIAL_NERACA);
+        const currentNeraca = getStoredNeraca();
+        await setDoc(doc(db, 'config', 'neraca'), currentNeraca);
       } catch (error) {
         handleFirestoreError(error, OperationType.WRITE, 'config/neraca');
       }
@@ -644,7 +728,8 @@ export function initializeFirestoreSync() {
   onSnapshot(collection(db, 'visitors'), async (snapshot) => {
     if (snapshot.empty) {
       try {
-        for (const v of INITIAL_VISITORS) {
+        const list = getStoredVisitors();
+        for (const v of list) {
           await setDoc(doc(db, 'visitors', v.id), v);
         }
       } catch (error) {
@@ -678,24 +763,26 @@ export function getStoredMembers(): Member[] {
   return JSON.parse(data);
 }
 
-export function saveStoredMembers(members: Member[]) {
+export async function saveStoredMembers(members: Member[]): Promise<void> {
   const currentLocal = JSON.parse(localStorage.getItem('ippi_members') || '[]');
   const incomingIds = new Set(members.map(m => m.id));
   const deletedIds = currentLocal.filter((m: any) => m && m.id && !incomingIds.has(m.id)).map((m: any) => m.id);
 
   localStorage.setItem('ippi_members', JSON.stringify(members));
   
-  members.forEach((m) => {
-    setDoc(doc(db, 'members', m.id), m).catch(err => {
-      handleFirestoreError(err, OperationType.WRITE, `members/${m.id}`);
+  try {
+    const promises: Promise<any>[] = [];
+    members.forEach((m) => {
+      promises.push(setDoc(doc(db, 'members', m.id), sanitizeFirestoreData(m)));
     });
-  });
-
-  deletedIds.forEach((id: string) => {
-    deleteDoc(doc(db, 'members', id)).catch(err => {
-      handleFirestoreError(err, OperationType.DELETE, `members/${id}`);
+    deletedIds.forEach((id: string) => {
+      promises.push(deleteDoc(doc(db, 'members', id)));
     });
-  });
+    await Promise.all(promises);
+    window.dispatchEvent(new Event('ippi_storage_updated'));
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, 'members_banyak');
+  }
 }
 
 export function getStoredConfig(): OrgConfig {
@@ -732,17 +819,22 @@ export function getStoredConfig(): OrgConfig {
   return parsed;
 }
 
-export function saveStoredConfig(config: OrgConfig) {
+export async function saveStoredConfig(config: OrgConfig): Promise<void> {
   localStorage.setItem('ippi_config', JSON.stringify(config));
-  setDoc(doc(db, 'config', 'main'), config).catch(err => {
+  try {
+    await setDoc(doc(db, 'config', 'main'), sanitizeFirestoreData(config));
+    window.dispatchEvent(new Event('ippi_storage_updated'));
+  } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, 'config/main');
-  });
+  }
 }
 
 export function getStoredContent(): HomepageContent {
+  if (cachedContent) return cachedContent;
   const data = localStorage.getItem('ippi_content');
   if (!data) {
     localStorage.setItem('ippi_content', JSON.stringify(INITIAL_CONTENT));
+    cachedContent = INITIAL_CONTENT;
     return INITIAL_CONTENT;
   }
   const parsed = JSON.parse(data);
@@ -802,14 +894,41 @@ export function getStoredContent(): HomepageContent {
   if (updated) {
     localStorage.setItem('ippi_content', JSON.stringify(parsed));
   }
+  cachedContent = parsed;
   return parsed;
 }
 
-export function saveStoredContent(content: HomepageContent) {
+export async function saveStoredContent(content: HomepageContent): Promise<void> {
+  cachedContent = content;
+  // First update LocalStorage
   localStorage.setItem('ippi_content', JSON.stringify(content));
-  setDoc(doc(db, 'content', 'main'), content).catch(err => {
-    handleFirestoreError(err, OperationType.WRITE, 'content/main');
-  });
+
+  try {
+    const promises = [
+      // 1. Save main info metadata
+      setDoc(doc(db, 'content', 'main'), sanitizeFirestoreData({
+        heroTitle: content.heroTitle || INITIAL_CONTENT.heroTitle,
+        heroSub: content.heroSub || INITIAL_CONTENT.heroSub,
+        heroText: content.heroText || INITIAL_CONTENT.heroText,
+        visiMisi: content.visiMisi || INITIAL_CONTENT.visiMisi,
+        mengapaBergabung: content.mengapaBergabung || INITIAL_CONTENT.mengapaBergabung,
+      })),
+      // 2. Save individual lists to separate specialized documents for sub-1MB guarantees
+      setDoc(doc(db, 'content', 'about_items'), sanitizeFirestoreData({ list: content.aboutItems || [] })),
+      setDoc(doc(db, 'content', 'program_kerja'), sanitizeFirestoreData({ list: content.programList || [] })),
+      setDoc(doc(db, 'content', 'galeri_kegiatan'), sanitizeFirestoreData({ list: content.kegiatan || [] })),
+      setDoc(doc(db, 'content', 'berita'), sanitizeFirestoreData({ list: content.beritaList || [] })),
+      setDoc(doc(db, 'content', 'jurnal_list'), sanitizeFirestoreData({ list: content.jurnalList || [] })),
+      setDoc(doc(db, 'content', 'struktur_list'), sanitizeFirestoreData({ list: content.strukturList || [] })),
+      setDoc(doc(db, 'content', 'fokus_kontribusi'), sanitizeFirestoreData({ list: content.fokusList || [] })),
+      setDoc(doc(db, 'content', 'umkm_list'), sanitizeFirestoreData({ list: content.umkmList || [] }))
+    ];
+
+    await Promise.all(promises);
+    window.dispatchEvent(new Event('ippi_storage_updated'));
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, 'content_all');
+  }
 }
 
 export function getStoredTransactions(): FinancialTransaction[] {
@@ -821,7 +940,7 @@ export function getStoredTransactions(): FinancialTransaction[] {
   return JSON.parse(data);
 }
 
-export function saveStoredTransactions(txs: FinancialTransaction[]) {
+export async function saveStoredTransactions(txs: FinancialTransaction[]): Promise<void> {
   const currentLocal = JSON.parse(localStorage.getItem('ippi_transactions') || '[]');
   const incomingIds = new Set(txs.map(t => t.id));
   const deletedIds = currentLocal.filter((t: any) => t && t.id && !incomingIds.has(t.id)).map((t: any) => t.id);
@@ -834,7 +953,7 @@ export function saveStoredTransactions(txs: FinancialTransaction[]) {
     // Add or update active transactions
     txs.forEach((tx) => {
       const txRef = doc(db, 'transactions', tx.id);
-      batch.set(txRef, tx);
+      batch.set(txRef, sanitizeFirestoreData(tx));
     });
 
     // Delete removed transactions
@@ -843,14 +962,11 @@ export function saveStoredTransactions(txs: FinancialTransaction[]) {
       batch.delete(txRef);
     });
 
-    batch.commit().then(() => {
-      // Trigger a direct window event to ensure immediate UI update
-      window.dispatchEvent(new Event('ippi_storage_updated'));
-    }).catch(err => {
-      handleFirestoreError(err, OperationType.WRITE, 'transactions_batch');
-    });
+    await batch.commit();
+    window.dispatchEvent(new Event('ippi_storage_updated'));
   } catch (err) {
     console.error('Error in saveStoredTransactions batch process:', err);
+    handleFirestoreError(err, OperationType.WRITE, 'transactions_batch');
   }
 }
 
@@ -863,24 +979,26 @@ export function getStoredVisitors(): VisitorLog[] {
   return JSON.parse(data);
 }
 
-export function saveStoredVisitors(logs: VisitorLog[]) {
+export async function saveStoredVisitors(logs: VisitorLog[]): Promise<void> {
   const currentLocal = JSON.parse(localStorage.getItem('ippi_visitors') || '[]');
   const incomingIds = new Set(logs.map(l => l.id));
   const deletedIds = currentLocal.filter((l: any) => l && l.id && !incomingIds.has(l.id)).map((l: any) => l.id);
 
   localStorage.setItem('ippi_visitors', JSON.stringify(logs));
 
-  logs.forEach((log) => {
-    setDoc(doc(db, 'visitors', log.id), log).catch(err => {
-      handleFirestoreError(err, OperationType.WRITE, `visitors/${log.id}`);
+  try {
+    const promises: Promise<any>[] = [];
+    logs.forEach((log) => {
+       promises.push(setDoc(doc(db, 'visitors', log.id), sanitizeFirestoreData(log)));
     });
-  });
-
-  deletedIds.forEach((id: string) => {
-    deleteDoc(doc(db, 'visitors', id)).catch(err => {
-      handleFirestoreError(err, OperationType.DELETE, `visitors/${id}`);
+    deletedIds.forEach((id: string) => {
+      promises.push(deleteDoc(doc(db, 'visitors', id)));
     });
-  });
+    await Promise.all(promises);
+    window.dispatchEvent(new Event('ippi_storage_updated'));
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, 'visitors_banyak');
+  }
 }
 
 export function logVisitorAction(nama: string, email: string, role: UserRole, action: 'LOGIN' | 'LOGOUT') {
@@ -906,13 +1024,14 @@ export function getStoredNeraca(): BalanceSheetData {
   return JSON.parse(data);
 }
 
-export function saveStoredNeraca(neraca: BalanceSheetData) {
+export async function saveStoredNeraca(neraca: BalanceSheetData): Promise<void> {
   localStorage.setItem('ippi_neraca', JSON.stringify(neraca));
-  setDoc(doc(db, 'config', 'neraca'), neraca).then(() => {
+  try {
+    await setDoc(doc(db, 'config', 'neraca'), sanitizeFirestoreData(neraca));
     window.dispatchEvent(new Event('ippi_storage_updated'));
-  }).catch((err) => {
+  } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, 'config/neraca');
-  });
+  }
 }
 
 /**

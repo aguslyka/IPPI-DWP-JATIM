@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { BalanceSheetData, FinancialTransaction, UserRole } from '../types';
-import { saveStoredNeraca } from '../utils/storage';
 import { Printer, Edit3, Save, CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react';
+
+// Baris baru untuk menghubungkan komponen ke Cloud Firestore Anda
+import { db } from '../utils/firebase';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 
 interface LaporanNeracaProps {
   currentRole: UserRole | null;
@@ -41,12 +44,25 @@ export default function LaporanNeraca({ currentRole, txs, neraca, logoUrl, logoT
   const totalKeluar = txs.reduce((acc, curr) => acc + (curr.jumlahKeluar || 0), 0);
   const currentCashBank = totalMasuk - totalKeluar;
 
-  // Track and update local form state when incoming prop changes
-  useEffect(() => {
-    if (neraca) {
-      setForm({ ...neraca });
+// Mengambil dan memantau data neraca dari Cloud Firestore secara otomatis & real-time
+useEffect(() => {
+  const neracaDocRef = doc(db, "config", "neraca");
+  const unsubscribe = onSnapshot(neracaDocRef, (docSnap) => {
+  
+if (docSnap.exists()) {
+  const dataDariCloud = docSnap.data();
+  setForm(dataDariCloud as BalanceSheetData);
+}
+  
+   else {
+      // Jika di cloud belum ada data, gunakan data bawaan dari props
+      if (neraca) setForm({ ...neraca });
     }
-  }, [neraca]);
+  });
+
+  // Putus koneksi database saat pengguna pindah halaman agar web tetap ringan
+  return () => unsubscribe();
+}, [neraca]);
 
   // Handle manual input change
   const handleNumberChange = (field: keyof BalanceSheetData, val: string) => {
@@ -64,12 +80,23 @@ export default function LaporanNeraca({ currentRole, txs, neraca, logoUrl, logoT
   };
 
   // Save to storage & Firestore
-  const handleSave = () => {
-    saveStoredNeraca(form);
+  const handleSave = async () => {
+  try {
+    // 1. Arahkan ke dokumen "config -> neraca" di Firestore
+    const neracaDocRef = doc(db, "config", "neraca");
+    
+    // 2. Simpan seluruh isi form secara permanen ke Cloud Firestore
+    await setDoc(neracaDocRef, form, { merge: true });
+    
+    // 3. Mengatur tampilan sukses setelah berhasil masuk ke database
     setIsEditing(false);
-    setSuccessMessage('Data Neraca berhasil disimpan dan disingkronkan ke database!');
+    setSuccessMessage('Data Neraca berhasil disimpan secara PERMANEN ke Cloud Firestore!');
     setTimeout(() => setSuccessMessage(''), 4000);
-  };
+  } catch (error) {
+    console.error("Gagal menyimpan ke Firestore:", error);
+    alert("Terjadi kesalahan koneksi. Data gagal disimpan ke Cloud.");
+  }
+};
 
   // Mathematical balance calculations
   const totalAsetLancar = currentCashBank + form.piutangAnggota + form.uangMukaPanjar + form.lainLainAktivaLancar;

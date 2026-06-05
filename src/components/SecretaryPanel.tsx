@@ -504,14 +504,19 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
     });
   };
 
-  const handleSaveHomepage = (e: React.FormEvent) => {
+  const handleSaveHomepage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content) return;
-    saveStoredContent(content);
-    onContentChange(content);
-    saveStoredConfig(localConfig);
-    if (onConfigChange) onConfigChange(localConfig);
-    setFeedback('Sukses: Teks, Layout, dan Rekening Resmi halaman beranda website berhasil diperbarui!');
+    try {
+      setFeedback('Sedang menyimpan perubahan...');
+      await saveStoredContent(content);
+      onContentChange(content);
+      await saveStoredConfig(localConfig);
+      if (onConfigChange) onConfigChange(localConfig);
+      setFeedback('Sukses: Teks, Layout, dan Rekening Resmi halaman beranda website berhasil diperbarui!');
+    } catch (err) {
+      setFeedback('Gagal menyimpan perubahan: ' + (err instanceof Error ? err.message : String(err)));
+    }
     setTimeout(() => setFeedback(null), 4000);
   };
 

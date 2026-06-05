@@ -1,18 +1,12 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
-const firebaseConfig = {
-  apiKey: "...",
-  authDomain: "...",
-  projectId: "...",
- 
-};
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firestore specifying the databaseId since it's an Enterprisexport const db = getFirestore(app);
-export const db = getFirestore(app);
+// Initialize Firestore specifying the databaseId since it's an Enterprise/custom instance
+export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 
 // Add the mandatory handleFirestoreError helper and OperationType enum as per guidelines
 export enum OperationType {
