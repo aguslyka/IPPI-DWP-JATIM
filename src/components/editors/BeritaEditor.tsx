@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { HomepageContent, BeritaItem } from '../../types';
-import { Plus, Trash2, Edit2, Save, X, Paperclip, Download, Eye, FileText, Facebook, Instagram, Youtube } from 'lucide-react';
+import { Plus, Trash2, Edit2, Save, X, Paperclip, Download, Eye, FileText, Facebook, Instagram, Youtube, Image as ImageIcon } from 'lucide-react';
+import { compressImage } from '../../utils/storage';
 
 interface BeritaEditorProps {
   content: HomepageContent;
@@ -21,6 +22,7 @@ export default function BeritaEditor({ content, onSave }: BeritaEditorProps) {
   const [newKutipan, setNewKutipan] = useState('');
   const [newPenulis, setNewPenulis] = useState('');
   const [newFileState, setNewFileState] = useState<{ name: string; type: string; data: string } | null>(null);
+  const [newImageUrl, setNewImageUrl] = useState('');
   const [newLinkFacebook, setNewLinkFacebook] = useState('');
   const [newLinkInstagram, setNewLinkInstagram] = useState('');
   const [newLinkYoutube, setNewLinkYoutube] = useState('');
@@ -31,6 +33,7 @@ export default function BeritaEditor({ content, onSave }: BeritaEditorProps) {
   const [editKutipan, setEditKutipan] = useState('');
   const [editPenulis, setEditPenulis] = useState('');
   const [editFileState, setEditFileState] = useState<{ name: string; type: string; data: string } | null>(null);
+  const [editImageUrl, setEditImageUrl] = useState('');
   const [editLinkFacebook, setEditLinkFacebook] = useState('');
   const [editLinkInstagram, setEditLinkInstagram] = useState('');
   const [editLinkYoutube, setEditLinkYoutube] = useState('');
@@ -90,7 +93,8 @@ export default function BeritaEditor({ content, onSave }: BeritaEditorProps) {
       fileData: newFileState?.data,
       linkFacebook: newLinkFacebook.trim() || undefined,
       linkInstagram: newLinkInstagram.trim() || undefined,
-      linkYoutube: newLinkYoutube.trim() || undefined
+      linkYoutube: newLinkYoutube.trim() || undefined,
+      imageUrl: newImageUrl || undefined
     };
 
     const updatedList = [newItem, ...items];
@@ -104,6 +108,7 @@ export default function BeritaEditor({ content, onSave }: BeritaEditorProps) {
     setNewKutipan('');
     setNewPenulis('');
     setNewFileState(null);
+    setNewImageUrl('');
     setNewLinkFacebook('');
     setNewLinkInstagram('');
     setNewLinkYoutube('');
@@ -119,6 +124,7 @@ export default function BeritaEditor({ content, onSave }: BeritaEditorProps) {
     setEditLinkFacebook(item.linkFacebook || '');
     setEditLinkInstagram(item.linkInstagram || '');
     setEditLinkYoutube(item.linkYoutube || '');
+    setEditImageUrl(item.imageUrl || '');
     if (item.fileName && item.fileData) {
       setEditFileState({
         name: item.fileName,
@@ -147,7 +153,8 @@ export default function BeritaEditor({ content, onSave }: BeritaEditorProps) {
           fileData: editFileState?.data,
           linkFacebook: editLinkFacebook.trim() || undefined,
           linkInstagram: editLinkInstagram.trim() || undefined,
-          linkYoutube: editLinkYoutube.trim() || undefined
+          linkYoutube: editLinkYoutube.trim() || undefined,
+          imageUrl: editImageUrl || undefined
         };
       }
       return item;
@@ -158,6 +165,7 @@ export default function BeritaEditor({ content, onSave }: BeritaEditorProps) {
     onSave({ ...content, beritaList: updatedList }, 'edit');
     setEditingId(null);
     setEditFileState(null);
+    setEditImageUrl('');
     setEditLinkFacebook('');
     setEditLinkInstagram('');
     setEditLinkYoutube('');
@@ -244,8 +252,7 @@ export default function BeritaEditor({ content, onSave }: BeritaEditorProps) {
                 required
               />
             </div>
-            
-            <div className="md:col-span-3 border-t border-gray-100 pt-3">
+                      <div className="md:col-span-3 border-t border-gray-100 pt-3">
               <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">Lampiran Berkas / Dokumen (Opsional: PDF, DOC, DOCX, PPT, PPTX)</label>
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-1.5">
                 <input
@@ -268,7 +275,7 @@ export default function BeritaEditor({ content, onSave }: BeritaEditorProps) {
                     <button
                       type="button"
                       onClick={() => clearFile(false)}
-                      className="text-red-700 hover:text-red-900 font-bold ml-1 text-sm leading-none cursor-pointer"
+                      className="text-red-750 hover:text-red-800 font-bold ml-1 text-sm leading-none cursor-pointer"
                       title="Hapus berkas"
                     >
                       &times;
@@ -276,6 +283,55 @@ export default function BeritaEditor({ content, onSave }: BeritaEditorProps) {
                   </div>
                 ) : (
                   <span className="text-[10px] text-gray-500 italic">Maksimal 5MB. Dokumen ini dapat diunduh atau dipreview langsung oleh pembaca.</span>
+                )}
+              </div>
+            </div>
+
+            <div className="md:col-span-3 border-t border-gray-100 pt-3">
+              <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">Upload/Unggah Foto Utama Berita (Opsional)</label>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-1.5">
+                <input
+                  type="file"
+                  id="new-berita-photo"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      compressImage(file)
+                        .then(base64 => setNewImageUrl(base64))
+                        .catch(err => {
+                          console.error("Error compressing news image:", err);
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            setNewImageUrl(event.target?.result as string);
+                          };
+                          reader.readAsDataURL(file);
+                        });
+                    }
+                  }}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="new-berita-photo"
+                  className="px-3 py-1.5 bg-gray-150 hover:bg-gray-250 text-gray-700 rounded-lg text-xs font-semibold cursor-pointer border border-gray-300 flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Pilih Foto Berita
+                </label>
+                {newImageUrl ? (
+                  <div className="flex items-center gap-3">
+                    <div className="w-16 h-10 rounded overflow-hidden border border-gray-300 bg-slate-50">
+                      <img src={newImageUrl} className="w-full h-full object-cover" alt="Preview Berita Baru" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setNewImageUrl('')}
+                      className="text-xs text-red-650 hover:text-red-750 font-bold hover:underline"
+                    >
+                      Batal Unggah
+                    </button>
+                  </div>
+                ) : (
+                  <span className="text-[10px] text-gray-500 italic">Gunakan foto landscape beresolusi baik.</span>
                 )}
               </div>
             </div>
@@ -407,7 +463,7 @@ export default function BeritaEditor({ content, onSave }: BeritaEditorProps) {
                     <button
                       type="button"
                       onClick={() => clearFile(true)}
-                      className="text-red-700 hover:text-red-900 font-bold ml-1 text-sm leading-none cursor-pointer"
+                      className="text-red-750 hover:text-red-800 font-bold ml-1 text-sm leading-none cursor-pointer"
                       title="Hapus berkas"
                     >
                       &times;
@@ -415,6 +471,55 @@ export default function BeritaEditor({ content, onSave }: BeritaEditorProps) {
                   </div>
                 ) : (
                   <span className="text-[10px] text-gray-500 italic">Maksimal 5MB. Dokumen ini dapat diunduh atau dipreview langsung oleh pembaca.</span>
+                )}
+              </div>
+            </div>
+
+            <div className="md:col-span-3 border-t border-gray-100 pt-3">
+              <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">Ganti Foto Utama Berita</label>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-1.5">
+                <input
+                  type="file"
+                  id="edit-berita-photo"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      compressImage(file)
+                        .then(base64 => setEditImageUrl(base64))
+                        .catch(err => {
+                          console.error("Error compressing news edit image:", err);
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            setEditImageUrl(event.target?.result as string);
+                          };
+                          reader.readAsDataURL(file);
+                        });
+                    }
+                  }}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="edit-berita-photo"
+                  className="px-3 py-1.5 bg-gray-150 hover:bg-gray-250 text-gray-700 rounded-lg text-xs font-semibold cursor-pointer border border-gray-300 flex items-center gap-1.5"
+                >
+                  <ImageIcon className="w-3.5 h-3.5" /> Ganti / Pilih Foto Baru
+                </label>
+                {editImageUrl ? (
+                  <div className="flex items-center gap-3">
+                    <div className="w-16 h-10 rounded overflow-hidden border border-gray-300 bg-slate-50">
+                      <img src={editImageUrl} className="w-full h-full object-cover" alt="Preview Berita Edit" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setEditImageUrl('')}
+                      className="text-xs text-red-650 hover:text-red-750 font-bold hover:underline"
+                    >
+                      Hapus Foto
+                    </button>
+                  </div>
+                ) : (
+                  <span className="text-[10px] text-gray-500 italic">Foto utama kosong atau belum dipilih.</span>
                 )}
               </div>
             </div>
@@ -485,6 +590,11 @@ export default function BeritaEditor({ content, onSave }: BeritaEditorProps) {
               <h4 className="text-base font-serif font-bold text-[#1B365D] leading-tight">
                 {item.judul}
               </h4>
+              {item.imageUrl && (
+                <div className="w-full md:max-w-md h-48 rounded-xl overflow-hidden border border-[#E5E0D5] my-2 bg-slate-100 flex items-center justify-center">
+                  <img src={item.imageUrl} alt={item.judul} className="w-full h-full object-cover" />
+                </div>
+              )}
               <p className="text-xs text-gray-600 leading-relaxed font-sans block">
                 {item.kutipan}
               </p>

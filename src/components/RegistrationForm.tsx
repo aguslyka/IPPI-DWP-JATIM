@@ -113,7 +113,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
           <p className="text-xs text-[#5D574F] italic">Silakan klik tombol WhatsApp hijau di bawah untuk menghubungi sekretaris cabang:</p>
           
           <a
-            href={`https://api.whatsapp.com/send?phone=081803100222&text=${encodedWa}`}
+            href={`https://api.whatsapp.com/send?phone=6281803100222&text=${encodedWa}`}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center space-x-3 px-6 py-4 bg-[#25D366] hover:bg-[#1C8C44] text-white hover:scale-105 transition-transform rounded-full shadow-lg font-bold text-base cursor-pointer"

@@ -110,6 +110,7 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
   const [newFokusDesc, setNewFokusDesc] = useState('');
   const [newFokusUrutan, setNewFokusUrutan] = useState<number | ''>('');
   const [newFokusFileState, setNewFokusFileState] = useState<{ name: string; type: string; data: string } | null>(null);
+  const [newFokusImageUrl, setNewFokusImageUrl] = useState('');
   const [newFokusLinkFacebook, setNewFokusLinkFacebook] = useState('');
   const [newFokusLinkInstagram, setNewFokusLinkInstagram] = useState('');
   const [newFokusLinkYoutube, setNewFokusLinkYoutube] = useState('');
@@ -119,6 +120,7 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
   const [editFokusDesc, setEditFokusDesc] = useState('');
   const [editFokusUrutan, setEditFokusUrutan] = useState<number | ''>('');
   const [editFokusFileState, setEditFokusFileState] = useState<{ name: string; type: string; data: string } | null>(null);
+  const [editFokusImageUrl, setEditFokusImageUrl] = useState('');
   const [editFokusLinkFacebook, setEditFokusLinkFacebook] = useState('');
   const [editFokusLinkInstagram, setEditFokusLinkInstagram] = useState('');
   const [editFokusLinkYoutube, setEditFokusLinkYoutube] = useState('');
@@ -420,7 +422,8 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
       fileData: newFokusFileState?.data,
       linkFacebook: newFokusLinkFacebook.trim() || undefined,
       linkInstagram: newFokusLinkInstagram.trim() || undefined,
-      linkYoutube: newFokusLinkYoutube.trim() || undefined
+      linkYoutube: newFokusLinkYoutube.trim() || undefined,
+      imageUrl: newFokusImageUrl || undefined
     };
     const updated = {
       ...homeContent,
@@ -435,6 +438,7 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
     setNewFokusDesc('');
     setNewFokusUrutan('');
     setNewFokusFileState(null);
+    setNewFokusImageUrl('');
     setNewFokusLinkFacebook('');
     setNewFokusLinkInstagram('');
     setNewFokusLinkYoutube('');
@@ -450,6 +454,7 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
     setEditFokusLinkFacebook(item.linkFacebook || '');
     setEditFokusLinkInstagram(item.linkInstagram || '');
     setEditFokusLinkYoutube(item.linkYoutube || '');
+    setEditFokusImageUrl(item.imageUrl || '');
     if (item.fileName && item.fileData) {
       setEditFokusFileState({
         name: item.fileName,
@@ -481,7 +486,8 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
           fileData: editFokusFileState?.data,
           linkFacebook: editFokusLinkFacebook.trim() || undefined,
           linkInstagram: editFokusLinkInstagram.trim() || undefined,
-          linkYoutube: editFokusLinkYoutube.trim() || undefined
+          linkYoutube: editFokusLinkYoutube.trim() || undefined,
+          imageUrl: editFokusImageUrl || undefined
         };
       }
       return f;
@@ -495,6 +501,7 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
     if (onContentChange) onContentChange(updated);
     setEditingFokusId(null);
     setEditFokusFileState(null);
+    setEditFokusImageUrl('');
     setEditFokusLinkFacebook('');
     setEditFokusLinkInstagram('');
     setEditFokusLinkYoutube('');
@@ -2339,6 +2346,55 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
                 </div>
               </div>
 
+              <div className="border-t border-[#E5E0D5]/70 pt-3">
+                <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">Upload/Unggah Foto Fokus Kontribusi (Opsional)</label>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-1 text-xs">
+                  <input
+                    type="file"
+                    id="new-fokus-photo"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        compressImage(file)
+                          .then(base64 => setNewFokusImageUrl(base64))
+                          .catch(err => {
+                            console.error("Error compressing fokus image:", err);
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              setNewFokusImageUrl(event.target?.result as string);
+                            };
+                            reader.readAsDataURL(file);
+                          });
+                      }
+                    }}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="new-fokus-photo"
+                    className="px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-700 rounded-lg text-xs font-semibold cursor-pointer border border-[#E5E0D5] flex items-center gap-1.5"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Pilih Foto
+                  </label>
+                  {newFokusImageUrl ? (
+                    <div className="flex items-center gap-3">
+                      <div className="w-16 h-10 rounded overflow-hidden border border-gray-300 bg-slate-50">
+                        <img src={newFokusImageUrl} className="w-full h-full object-cover" alt="Preview Fokus Baru" />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setNewFokusImageUrl('')}
+                        className="text-xs text-red-650 hover:text-red-750 font-bold hover:underline cursor-pointer"
+                      >
+                        Batal Unggah
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-[10px] text-gray-500 italic">Foto ilustrasi pilar ini akan ditampilkan dalam card.</span>
+                  )}
+                </div>
+              </div>
+
               {/* TAUTAN MEDIA SOSIAL FOKUS KONTRIBUSI */}
               <div className="border-t border-[#E5E0D5]/70 pt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
@@ -2474,6 +2530,55 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
                 </div>
               </div>
 
+              <div className="border-t border-[#E5E0D5]/70 pt-3">
+                <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">Ganti Foto Fokus Kontribusi (Opsional)</label>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-1 text-xs">
+                  <input
+                    type="file"
+                    id="edit-fokus-photo"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        compressImage(file)
+                          .then(base64 => setEditFokusImageUrl(base64))
+                          .catch(err => {
+                            console.error("Error compressing edit fokus image:", err);
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              setEditFokusImageUrl(event.target?.result as string);
+                            };
+                            reader.readAsDataURL(file);
+                          });
+                      }
+                    }}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="edit-fokus-photo"
+                    className="px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-700 rounded-lg text-xs font-semibold cursor-pointer border border-[#E5E0D5] flex items-center gap-1.5"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Pilih / Ganti Foto
+                  </label>
+                  {editFokusImageUrl ? (
+                    <div className="flex items-center gap-3">
+                      <div className="w-16 h-10 rounded overflow-hidden border border-gray-300 bg-slate-50">
+                        <img src={editFokusImageUrl} className="w-full h-full object-cover" alt="Preview Fokus Edit" />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setEditFokusImageUrl('')}
+                        className="text-xs text-red-650 hover:text-red-750 font-bold hover:underline cursor-pointer"
+                      >
+                        Hapus Foto
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-[10px] text-gray-500 italic">Gunakan foto beresolusi sedang / lanskap.</span>
+                  )}
+                </div>
+              </div>
+
               {/* TAUTAN MEDIA SOSIAL FOKUS KONTRIBUSI EDIT */}
               <div className="border-t border-[#E5E0D5]/70 pt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
@@ -2555,6 +2660,11 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
                     </div>
                   </div>
                   <h4 className="font-serif font-bold text-[#1B365D] text-sm mt-3">{item.judul}</h4>
+                  {item.imageUrl && (
+                    <div className="w-full h-32 rounded-xl overflow-hidden border border-[#E5E0D5] my-2 bg-slate-50 flex items-center justify-center">
+                      <img src={item.imageUrl} alt={item.judul} className="w-full h-full object-cover" />
+                    </div>
+                  )}
                   <p className="text-[11px] text-gray-500 leading-relaxed mt-1">{item.deskripsi}</p>
                 </div>
 

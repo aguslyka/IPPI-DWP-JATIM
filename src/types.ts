@@ -131,6 +131,7 @@ export interface FokusKontribusi {
   linkFacebook?: string;
   linkInstagram?: string;
   linkYoutube?: string;
+  imageUrl?: string;
 }
 
 export interface AboutItem {
@@ -153,6 +154,7 @@ export interface ProgramItem {
   linkFacebook?: string;
   linkInstagram?: string;
   linkYoutube?: string;
+  imageUrl?: string;
 }
 
 export interface BeritaItem {
@@ -167,6 +169,7 @@ export interface BeritaItem {
   linkFacebook?: string;
   linkInstagram?: string;
   linkYoutube?: string;
+  imageUrl?: string;
 }
 
 export interface JurnalItem {
@@ -181,6 +184,7 @@ export interface JurnalItem {
   linkFacebook?: string;
   linkInstagram?: string;
   linkYoutube?: string;
+  imageUrl?: string;
 }
 
 export interface ActivityPhoto {

@@ -113,7 +113,7 @@ export default function LoginModal({ onLoginSuccess, onClose, onRegisterClick }:
             <div className="space-y-4">
               <p className="text-[11px] text-gray-500">Klik tombol di bawah ini untuk mengirim verifikasi WhatsApp lunas langsung ke Admin:</p>
               <a
-                href={`https://api.whatsapp.com/send?phone=081803100222&text=${encodeURIComponent(`Yth. Sekretaris IPPI setempat, mohon berkenan menyetujui akun IPPI terdaftar saya atas nama: *${showUnapprovedNotice.nama}*. Terima kasih.`)}`}
+                href={`https://api.whatsapp.com/send?phone=6281803100222&text=${encodeURIComponent(`Yth. Sekretaris IPPI setempat, mohon berkenan menyetujui akun IPPI terdaftar saya atas nama: *${showUnapprovedNotice.nama}*. Terima kasih.`)}`}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center space-x-2 px-6 py-3 bg-[#25D366] hover:bg-[#128C7E] text-white rounded-full font-bold shadow-lg text-sm transition-transform hover:scale-103 cursor-pointer"

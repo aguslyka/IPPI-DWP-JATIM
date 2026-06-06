@@ -15,6 +15,7 @@ import {
   ChevronRight, 
   AlertCircle
 } from 'lucide-react';
+import { compressImage } from '../utils/storage';
 
 interface LapakUmkmProps {
   content: HomepageContent;
@@ -600,6 +601,58 @@ export default function LapakUmkm({ content, currentUser, onSave }: LapakUmkmPro
                   onChange={(e) => setImageUrl(e.target.value)}
                   className="w-full text-xs p-2.5 bg-slate-50 border border-gray-200 focus:border-[#C5A059] focus:bg-white focus:outline-none rounded-xl transition-all font-sans font-normal"
                 />
+              </div>
+
+              {/* Upload Foto Produk */}
+              <div className="space-y-1 bg-gray-50 p-3 rounded-xl border border-gray-200 text-left">
+                <label className="block text-gray-700 font-bold">Atau Upload/Unggah Foto Produk Langsung <span className="text-gray-400 font-normal">(Rekomendasi)</span></label>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-1 text-xs">
+                  <input
+                    type="file"
+                    id="umkm-photo-upload"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        compressImage(file)
+                          .then(base64 => setImageUrl(base64))
+                          .catch(err => {
+                            console.error("Error compressing product image:", err);
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              setImageUrl(event.target?.result as string);
+                            };
+                            reader.readAsDataURL(file);
+                          });
+                      }
+                    }}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="umkm-photo-upload"
+                    className="px-3 py-1.5 bg-white hover:bg-gray-100 text-[#1B365D] rounded-lg text-xs font-semibold cursor-pointer border border-gray-350 flex items-center gap-1.5 shadow-xs"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Pilih file foto produk
+                  </label>
+                  {imageUrl && imageUrl.startsWith('data:image') ? (
+                    <div className="flex items-center gap-3">
+                      <div className="w-16 h-10 rounded overflow-hidden border border-gray-300 bg-white">
+                        <img src={imageUrl} className="w-full h-full object-cover" alt="Preview Produk" />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setImageUrl('')}
+                        className="text-xs text-red-650 hover:text-red-750 font-bold hover:underline cursor-pointer font-sans"
+                      >
+                        Batal / Hapus Foto
+                      </button>
+                    </div>
+                  ) : imageUrl ? (
+                    <span className="text-[10px] text-gray-500 italic max-w-[200px] truncate font-sans">Menggunakan URL eksternal gambar</span>
+                  ) : (
+                    <span className="text-[10px] text-gray-400 italic font-sans">Maksimal 5MB. Foto lokal akan dicompress &amp; disimpan secara luhur.</span>
+                  )}
+                </div>
               </div>
 
               {/* Row 6: Tautan Beli Olshop & Video Promosi */}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { HomepageContent, JurnalItem } from '../../types';
-import { Plus, Trash2, Edit2, Save, X, Paperclip, Download, Eye, FileText, Facebook, Instagram, Youtube } from 'lucide-react';
+import { Plus, Trash2, Edit2, Save, X, Paperclip, Download, Eye, FileText, Facebook, Instagram, Youtube, Image as ImageIcon } from 'lucide-react';
+import { compressImage } from '../../utils/storage';
 
 interface JurnalEditorProps {
   content: HomepageContent;
@@ -21,6 +22,7 @@ export default function JurnalEditor({ content, onSave }: JurnalEditorProps) {
   const [newSubjek, setNewSubjek] = useState('');
   const [newAbstrak, setNewAbstrak] = useState('');
   const [newFileState, setNewFileState] = useState<{ name: string; type: string; data: string } | null>(null);
+  const [newImageUrl, setNewImageUrl] = useState('');
   const [newLinkFacebook, setNewLinkFacebook] = useState('');
   const [newLinkInstagram, setNewLinkInstagram] = useState('');
   const [newLinkYoutube, setNewLinkYoutube] = useState('');
@@ -31,6 +33,7 @@ export default function JurnalEditor({ content, onSave }: JurnalEditorProps) {
   const [editSubjek, setEditSubjek] = useState('');
   const [editAbstrak, setEditAbstrak] = useState('');
   const [editFileState, setEditFileState] = useState<{ name: string; type: string; data: string } | null>(null);
+  const [editImageUrl, setEditImageUrl] = useState('');
   const [editLinkFacebook, setEditLinkFacebook] = useState('');
   const [editLinkInstagram, setEditLinkInstagram] = useState('');
   const [editLinkYoutube, setEditLinkYoutube] = useState('');
@@ -82,7 +85,7 @@ export default function JurnalEditor({ content, onSave }: JurnalEditorProps) {
     const newItem: JurnalItem = {
       id: `jr_${Date.now()}`,
       judul: newJudul.trim(),
-      tanggalPublikasi: newTanggalPublikasi.trim() || 'Mei 2026',
+      tanggalPublikasi: newTanggalPublikasi.trim() || 'Mei 25',
       subjek: newSubjek.trim() || 'Logistik, Keuangan, Manajemen',
       abstrak: newAbstrak.trim(),
       fileName: newFileState?.name,
@@ -90,7 +93,8 @@ export default function JurnalEditor({ content, onSave }: JurnalEditorProps) {
       fileData: newFileState?.data,
       linkFacebook: newLinkFacebook.trim() || undefined,
       linkInstagram: newLinkInstagram.trim() || undefined,
-      linkYoutube: newLinkYoutube.trim() || undefined
+      linkYoutube: newLinkYoutube.trim() || undefined,
+      imageUrl: newImageUrl || undefined
     };
 
     const updatedList = [newItem, ...items];
@@ -104,6 +108,7 @@ export default function JurnalEditor({ content, onSave }: JurnalEditorProps) {
     setNewSubjek('');
     setNewAbstrak('');
     setNewFileState(null);
+    setNewImageUrl('');
     setNewLinkFacebook('');
     setNewLinkInstagram('');
     setNewLinkYoutube('');
@@ -119,6 +124,7 @@ export default function JurnalEditor({ content, onSave }: JurnalEditorProps) {
     setEditLinkFacebook(item.linkFacebook || '');
     setEditLinkInstagram(item.linkInstagram || '');
     setEditLinkYoutube(item.linkYoutube || '');
+    setEditImageUrl(item.imageUrl || '');
     if (item.fileName && item.fileData) {
       setEditFileState({
         name: item.fileName,
@@ -147,7 +153,8 @@ export default function JurnalEditor({ content, onSave }: JurnalEditorProps) {
           fileData: editFileState?.data,
           linkFacebook: editLinkFacebook.trim() || undefined,
           linkInstagram: editLinkInstagram.trim() || undefined,
-          linkYoutube: editLinkYoutube.trim() || undefined
+          linkYoutube: editLinkYoutube.trim() || undefined,
+          imageUrl: editImageUrl || undefined
         };
       }
       return item;
@@ -158,6 +165,7 @@ export default function JurnalEditor({ content, onSave }: JurnalEditorProps) {
     onSave({ ...content, jurnalList: updatedList }, 'edit');
     setEditingId(null);
     setEditFileState(null);
+    setEditImageUrl('');
     setEditLinkFacebook('');
     setEditLinkInstagram('');
     setEditLinkYoutube('');
@@ -245,7 +253,6 @@ export default function JurnalEditor({ content, onSave }: JurnalEditorProps) {
                 required
               />
             </div>
-
             <div className="md:col-span-2 border-t border-gray-100 pt-3">
               <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">Lampiran Berkas / Dokumen (Opsional: PDF, DOC, DOCX, PPT, PPTX)</label>
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-1.5">
@@ -269,7 +276,7 @@ export default function JurnalEditor({ content, onSave }: JurnalEditorProps) {
                     <button
                       type="button"
                       onClick={() => clearFile(false)}
-                      className="text-red-700 hover:text-red-900 font-bold ml-1 text-sm leading-none cursor-pointer"
+                      className="text-red-750 hover:text-red-800 font-bold ml-1 text-sm leading-none cursor-pointer"
                       title="Hapus berkas"
                     >
                       &times;
@@ -277,6 +284,55 @@ export default function JurnalEditor({ content, onSave }: JurnalEditorProps) {
                   </div>
                 ) : (
                   <span className="text-[10px] text-gray-500 italic">Maksimal 5MB. Dokumen ini dapat diunduh atau dipreview langsung oleh pembaca.</span>
+                )}
+              </div>
+            </div>
+
+            <div className="md:col-span-2 border-t border-gray-100 pt-3">
+              <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">Upload/Unggah Cover atau Foto Ilustrasi Jurnal (Opsional)</label>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-1.5">
+                <input
+                  type="file"
+                  id="new-jurnal-photo"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      compressImage(file)
+                        .then(base64 => setNewImageUrl(base64))
+                        .catch(err => {
+                          console.error("Error compressing journal image:", err);
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            setNewImageUrl(event.target?.result as string);
+                          };
+                          reader.readAsDataURL(file);
+                        });
+                    }
+                  }}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="new-jurnal-photo"
+                  className="px-3 py-1.5 bg-gray-150 hover:bg-gray-250 text-gray-700 rounded-lg text-xs font-semibold cursor-pointer border border-gray-300 flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Pilih Foto Cover
+                </label>
+                {newImageUrl ? (
+                  <div className="flex items-center gap-3">
+                    <div className="w-16 h-10 rounded overflow-hidden border border-gray-300 bg-slate-50">
+                      <img src={newImageUrl} className="w-full h-full object-cover" alt="Preview Jurnal Baru" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setNewImageUrl('')}
+                      className="text-xs text-red-650 hover:text-red-750 font-bold hover:underline"
+                    >
+                      Batal Unggah
+                    </button>
+                  </div>
+                ) : (
+                  <span className="text-[10px] text-gray-500 italic">Gunakan foto bernuansa akademis/edukatif.</span>
                 )}
               </div>
             </div>
@@ -384,7 +440,6 @@ export default function JurnalEditor({ content, onSave }: JurnalEditorProps) {
                 required
               />
             </div>
-
             <div className="md:col-span-2 border-t border-gray-100 pt-3">
               <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">Lampiran Berkas / Dokumen (Opsional: PDF, DOC, DOCX, PPT, PPTX)</label>
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-1.5">
@@ -408,7 +463,7 @@ export default function JurnalEditor({ content, onSave }: JurnalEditorProps) {
                     <button
                       type="button"
                       onClick={() => clearFile(true)}
-                      className="text-red-700 hover:text-red-900 font-bold ml-1 text-sm leading-none cursor-pointer"
+                      className="text-red-750 hover:text-red-800 font-bold ml-1 text-sm leading-none cursor-pointer"
                       title="Hapus berkas"
                     >
                       &times;
@@ -416,6 +471,55 @@ export default function JurnalEditor({ content, onSave }: JurnalEditorProps) {
                   </div>
                 ) : (
                   <span className="text-[10px] text-gray-500 italic">Maksimal 5MB. Dokumen ini dapat diunduh atau dipreview langsung oleh pembaca.</span>
+                )}
+              </div>
+            </div>
+
+            <div className="md:col-span-2 border-t border-gray-100 pt-3">
+              <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">Ganti Cover / Foto Ilustrasi Jurnal</label>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-1.5">
+                <input
+                  type="file"
+                  id="edit-jurnal-photo"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      compressImage(file)
+                        .then(base64 => setEditImageUrl(base64))
+                        .catch(err => {
+                          console.error("Error compressing journal edit image:", err);
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            setEditImageUrl(event.target?.result as string);
+                          };
+                          reader.readAsDataURL(file);
+                        });
+                    }
+                  }}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="edit-jurnal-photo"
+                  className="px-3 py-1.5 bg-gray-150 hover:bg-gray-250 text-gray-700 rounded-lg text-xs font-semibold cursor-pointer border border-[#E5E0D5] flex items-center gap-1.5"
+                >
+                  <ImageIcon className="w-3.5 h-3.5" /> Ganti / Pilih Cover
+                </label>
+                {editImageUrl ? (
+                  <div className="flex items-center gap-3">
+                    <div className="w-16 h-10 rounded overflow-hidden border border-gray-300 bg-slate-50">
+                      <img src={editImageUrl} className="w-full h-full object-cover" alt="Preview Jurnal Edit" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setEditImageUrl('')}
+                      className="text-xs text-red-650 hover:text-red-750 font-bold hover:underline"
+                    >
+                      Hapus Cover
+                    </button>
+                  </div>
+                ) : (
+                  <span className="text-[10px] text-gray-500 italic">Sampul kosong atau belum dipilih.</span>
                 )}
               </div>
             </div>
@@ -480,6 +584,11 @@ export default function JurnalEditor({ content, onSave }: JurnalEditorProps) {
               <h4 className="text-base font-serif font-bold text-[#1B365D] leading-tight">
                 {item.judul}
               </h4>
+              {item.imageUrl && (
+                <div className="w-full md:max-w-md h-48 rounded-xl overflow-hidden border border-[#E5E0D5] my-2 bg-slate-50 flex items-center justify-center">
+                  <img src={item.imageUrl} alt={item.judul} className="w-full h-full object-cover" />
+                </div>
+              )}
               <p className="text-xs font-medium text-gray-600">Subjek Utama: <span className="text-[#1B365D] font-bold">{item.subjek}</span></p>
               <p className="text-xs italic text-gray-500 leading-relaxed bg-gray-50/50 p-2.5 rounded border border-[#E5E0D5]">
                 {item.abstrak}

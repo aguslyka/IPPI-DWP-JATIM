@@ -11,6 +11,17 @@ export default function FinancialSheet({ currentRole }: FinancialSheetProps) {
   const [txs, setTxs] = useState<FinancialTransaction[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
 
+  // Helper: Format WhatsApp to standard wa.me/62...
+  const sanitizeWhatsApp = (numStr: string) => {
+    let clean = numStr.replace(/\D/g, '');
+    if (clean.startsWith('0')) {
+      clean = '62' + clean.slice(1);
+    } else if (clean.startsWith('8')) {
+      clean = '62' + clean;
+    }
+    return clean;
+  };
+
   // Form states
   const [tanggal, setTanggal] = useState(new Date().toISOString().split('T')[0]);
   const [kategori, setKategori] = useState<TransaksiKategori>(TransaksiKategori.MASUK);
@@ -49,6 +60,19 @@ export default function FinancialSheet({ currentRole }: FinancialSheetProps) {
   // Message template generator target state
   const [whatsappMock, setWhatsappMock] = useState<{ phone: string; text: string } | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  // Live computed WhatsApp draft values for instant/automatic feedback
+  const livePhoneNum = linkedMember ? linkedMember.noTelp : '081803100222';
+  const liveWaText = React.useMemo(() => {
+    const formattedJumlah = (jumlah || 0).toLocaleString('id-ID');
+    if (kategori === TransaksiKategori.MASUK) {
+      return `Yth. Anggota/Mitra IPPI, Terima kasih pembayaran/penerimaan dana untuk kategori "${sumberTujuan}" dengan keterangan "${deskripsi || 'Pembayaran...'}" sebesar Rp ${formattedJumlah} telah kami verifikasi masuk ke Kas Keuangan IPPI pada tanggal ${tanggal}. Semoga berkah dan sehat selalu! - Bendahara IPPI (jangan lupa selalu update di web: https://dpwippijatim.cekdiribk.id )`;
+    } else {
+      return `Pemberitahuan IPPI: Pengeluaran dana untuk kategori "${sumberTujuan}" dengan keterangan/perihal "${deskripsi || 'Keperluan...'}" sebesar Rp ${formattedJumlah} telah dicairkan dan ditransfer ke rekening ${noRekening || '...'} pada tanggal ${tanggal}. Harap simpan nota lunas Anda. Terima kasih. - Bendahara IPPI`;
+    }
+  }, [kategori, sumberTujuan, deskripsi, jumlah, tanggal, noRekening]);
+
+  const isFormActive = jumlah > 0 || deskripsi.trim().length > 0;
 
   // Edit states for Admin Role
   const [editingTxId, setEditingTxId] = useState<string | null>(null);
@@ -177,9 +201,9 @@ export default function FinancialSheet({ currentRole }: FinancialSheetProps) {
       let waText = '';
       if (kategori === TransaksiKategori.MASUK) {
         phoneNum = linkedMember ? linkedMember.noTelp : '081803100222';
-        waText = `Yth. Anggota IPPI, Terima kasih pembayaran Iuran Anda sebesar Rp ${jumlah.toLocaleString('id-ID')} telah kami verifikasi masuk ke kas keuangan IPPI pada tanggal ${tanggal}. Semoga berkah dan sehat selalu! - Bendahara IPPI (jangan lupa selau update di web : https://dpwsppijatim.cekdiribk.id)`;
+        waText = `Yth. Anggota/Mitra IPPI, Terima kasih pembayaran/penerimaan dana untuk kategori "${sumberTujuan}" dengan keterangan "${deskripsi}" sebesar Rp ${jumlah.toLocaleString('id-ID')} telah kami verifikasi masuk ke Kas Keuangan IPPI pada tanggal ${tanggal}. Semoga berkah dan sehat selalu! - Bendahara IPPI (jangan lupa selalu update di web: https://dpwippijatim.cekdiribk.id )`;
       } else {
-        waText = `Pemberitahuan IPPI: Pengeluaran dana SPJ dengan perihal "${deskripsi}" sebesar Rp ${jumlah.toLocaleString('id-ID')} telah dicairkan dan ditransfer ke rekening ${noRekening} pada tanggal ${tanggal}. Harap simpan nota lunas Anda. Terima kasih. - Bendahara IPPI`;
+        waText = `Pemberitahuan IPPI: Pengeluaran dana untuk kategori "${sumberTujuan}" dengan keterangan/perihal "${deskripsi}" sebesar Rp ${jumlah.toLocaleString('id-ID')} telah dicairkan dan ditransfer ke rekening ${noRekening} pada tanggal ${tanggal}. Harap simpan nota lunas Anda. Terima kasih. - Bendahara IPPI`;
       }
 
       setWhatsappMock({
@@ -603,24 +627,30 @@ export default function FinancialSheet({ currentRole }: FinancialSheetProps) {
           )}
 
           {/* Quick Mock WhatsApp Notification panel */}
-          {whatsappMock && (
+          {(isFormActive || whatsappMock) && (
             <div className="bg-[#E8F5E9] border border-emerald-300 text-[#1B5E20] rounded-2xl p-5 shadow-sm space-y-3">
               <div className="flex items-center space-x-2 text-xs font-bold uppercase text-emerald-800">
                 <Send className="w-4 h-4" />
-                <span>Kirim Bukti Pembayaran ke WhatsApp</span>
+                <span>
+                  {isFormActive 
+                    ? 'Pratinjau Draft WhatsApp (Real-time)' 
+                    : 'Kirim Bukti Pembayaran ke WhatsApp'}
+                </span>
               </div>
               <p className="text-[11px] text-emerald-700 leading-relaxed">
-                Pesan notifikasi konfirmasi di bawah ini siap dikirim ke nomor WhatsApp anggota (lansia-terdaftar) secara otomatis:
+                {isFormActive 
+                  ? 'Berikut adalah draft pesan WhatsApp yang otomatis terisi merujuk dari isian kategori dan keterangan Anda di atas secara live:'
+                  : 'Pesan notifikasi konfirmasi di bawah ini siap dikirim ke nomor WhatsApp anggota (lansia-terdaftar) secara otomatis:'}
               </p>
               <div className="bg-white rounded border border-emerald-200 p-3 font-mono text-[11px] text-gray-700 break-words">
-                <strong>Kepada:</strong> {whatsappMock.phone} <br />
-                <strong>Pesan:</strong> {whatsappMock.text}
+                <strong>Kepada:</strong> {isFormActive ? livePhoneNum : whatsappMock?.phone} <br />
+                <strong>Pesan:</strong> {isFormActive ? liveWaText : whatsappMock?.text}
               </div>
               <a
-                href={`https://api.whatsapp.com/send?phone=${whatsappMock.phone}&text=${encodeURIComponent(whatsappMock.text)}`}
+                href={`https://api.whatsapp.com/send?phone=${sanitizeWhatsApp(isFormActive ? livePhoneNum : (whatsappMock?.phone || ''))}&text=${encodeURIComponent(isFormActive ? liveWaText : (whatsappMock?.text || ''))}`}
                 target="_blank"
                 rel="noreferrer"
-                className="w-full inline-flex items-center justify-center space-x-2 bg-[#25D366] hover:bg-[#128C7E] text-white text-xs font-bold py-2.5 px-3 rounded-lg shadow-sm transition-transform hover:scale-102"
+                className="w-full inline-flex items-center justify-center space-x-2 bg-[#25D366] hover:bg-[#128C7E] text-white text-xs font-bold py-2.5 px-3 rounded-lg shadow-sm transition-transform hover:scale-102 cursor-pointer"
               >
                 <span>Kirim Lewat WhatsApp Sekarang</span>
               </a>

@@ -20,6 +20,17 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
   const [members, setMembers] = useState<Member[]>([]);
   const [localConfig, setLocalConfig] = useState<OrgConfig>(config);
 
+  // Helper: Format WhatsApp to standard wa.me/62...
+  const sanitizeWhatsApp = (numStr: string) => {
+    let clean = (numStr || '').replace(/\D/g, '');
+    if (clean.startsWith('0')) {
+      clean = '62' + clean.slice(1);
+    } else if (clean.startsWith('8')) {
+      clean = '62' + clean;
+    }
+    return clean;
+  };
+
   useEffect(() => {
     setLocalConfig(config);
   }, [config]);
@@ -75,6 +86,8 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
   // Fokus Lampiran & Media Sosial
   const [newFokusFileState, setNewFokusFileState] = useState<{ name: string; type: string; data: string } | null>(null);
   const [editFokusFileState, setEditFokusFileState] = useState<{ name: string; type: string; data: string } | null>(null);
+  const [newFokusImageUrl, setNewFokusImageUrl] = useState('');
+  const [editFokusImageUrl, setEditFokusImageUrl] = useState('');
 
   const [newFokusLinkFacebook, setNewFokusLinkFacebook] = useState('');
   const [newFokusLinkInstagram, setNewFokusLinkInstagram] = useState('');
@@ -404,7 +417,8 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
       // Social Web links
       linkFacebook: newFokusLinkFacebook.trim() || undefined,
       linkInstagram: newFokusLinkInstagram.trim() || undefined,
-      linkYoutube: newFokusLinkYoutube.trim() || undefined
+      linkYoutube: newFokusLinkYoutube.trim() || undefined,
+      imageUrl: newFokusImageUrl || undefined
     };
     const updated = {
       ...content,
@@ -419,6 +433,7 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
     setNewFokusDesc('');
     setNewFokusUrutan('');
     setNewFokusFileState(null);
+    setNewFokusImageUrl('');
     setNewFokusLinkFacebook('');
     setNewFokusLinkInstagram('');
     setNewFokusLinkYoutube('');
@@ -436,6 +451,7 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
     setEditFokusLinkFacebook(item.linkFacebook || '');
     setEditFokusLinkInstagram(item.linkInstagram || '');
     setEditFokusLinkYoutube(item.linkYoutube || '');
+    setEditFokusImageUrl(item.imageUrl || '');
   };
 
   const handleSaveEditFokus = () => {
@@ -460,7 +476,8 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
           // Update social
           linkFacebook: editFokusLinkFacebook.trim() || undefined,
           linkInstagram: editFokusLinkInstagram.trim() || undefined,
-          linkYoutube: editFokusLinkYoutube.trim() || undefined
+          linkYoutube: editFokusLinkYoutube.trim() || undefined,
+          imageUrl: editFokusImageUrl || undefined
         };
       }
       return f;
@@ -474,6 +491,7 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
     if (onContentChange) onContentChange(updated);
     setEditingFokusId(null);
     setEditFokusFileState(null);
+    setEditFokusImageUrl('');
     setEditFokusLinkFacebook('');
     setEditFokusLinkInstagram('');
     setEditFokusLinkYoutube('');
@@ -1557,7 +1575,7 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
             ) : (
               pendingMembers.map((m) => {
                 const draftWAMsg = `Selamat Anda telah bergabung dengan IPPI, silahkan login dengan user dan password yang sudah didaftarkan.`;
-                const waUrl = `https://api.whatsapp.com/send?phone=${m.noTelp}&text=${encodeURIComponent(draftWAMsg)}`;
+                const waUrl = `https://api.whatsapp.com/send?phone=${sanitizeWhatsApp(m.noTelp)}&text=${encodeURIComponent(draftWAMsg)}`;
 
                 return (
                   <div key={m.id} className="bg-[#FDFCF8] border border-[#E5E0D5] rounded-xl p-5 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
@@ -1771,6 +1789,55 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
                 </div>
               </div>
 
+              <div className="border-t border-[#E5E0D5]/70 pt-3 text-left">
+                <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">Upload/Unggah Foto Fokus Kontribusi (Opsional)</label>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-1 text-xs">
+                  <input
+                    type="file"
+                    id="sec-new-fokus-photo"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        compressImage(file)
+                          .then(base64 => setNewFokusImageUrl(base64))
+                          .catch(err => {
+                            console.error("Error compressing secretary fokus image:", err);
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              setNewFokusImageUrl(event.target?.result as string);
+                            };
+                            reader.readAsDataURL(file);
+                          });
+                      }
+                    }}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="sec-new-fokus-photo"
+                    className="px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-700 rounded-lg text-xs font-semibold cursor-pointer border border-[#E5E0D5] flex items-center gap-1.5"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Pilih Foto
+                  </label>
+                  {newFokusImageUrl ? (
+                    <div className="flex items-center gap-3">
+                      <div className="w-16 h-10 rounded overflow-hidden border border-gray-300 bg-slate-50">
+                        <img src={newFokusImageUrl} className="w-full h-full object-cover" alt="Preview Fokus" />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setNewFokusImageUrl('')}
+                        className="text-xs text-red-650 hover:text-red-750 font-bold hover:underline cursor-pointer"
+                      >
+                        Batal Unggah
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-[10px] text-gray-500 italic">Foto ilustrasi akan diletakkan di dalam card.</span>
+                  )}
+                </div>
+              </div>
+
               {/* Social URLs media links for Fokus pilar */}
               <div className="border-t border-[#E5E0D5]/70 pt-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-left">
                 <div>
@@ -1906,6 +1973,55 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
                 </div>
               </div>
 
+              <div className="border-t border-[#E5E0D5]/70 pt-3 text-left">
+                <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">Ganti Foto Fokus Kontribusi (Opsional)</label>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-1 text-xs">
+                  <input
+                    type="file"
+                    id="sec-edit-fokus-photo"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        compressImage(file)
+                          .then(base64 => setEditFokusImageUrl(base64))
+                          .catch(err => {
+                            console.error("Error compressing secretary edit fokus image:", err);
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              setEditFokusImageUrl(event.target?.result as string);
+                            };
+                            reader.readAsDataURL(file);
+                          });
+                      }
+                    }}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="sec-edit-fokus-photo"
+                    className="px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-700 rounded-lg text-xs font-semibold cursor-pointer border border-[#E5E0D5] flex items-center gap-1.5"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Pilih / Ganti Foto
+                  </label>
+                  {editFokusImageUrl ? (
+                    <div className="flex items-center gap-3">
+                      <div className="w-16 h-10 rounded overflow-hidden border border-gray-300 bg-slate-50">
+                        <img src={editFokusImageUrl} className="w-full h-full object-cover" alt="Preview Fokus Edit" />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setEditFokusImageUrl('')}
+                        className="text-xs text-red-650 hover:text-red-750 font-bold hover:underline cursor-pointer"
+                      >
+                        Hapus Foto
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-[10px] text-gray-500 italic">Gunakan foto beresolusi sedang / lanskap.</span>
+                  )}
+                </div>
+              </div>
+
               {/* Social URLs media links for Fokus pilar edit mode */}
               <div className="border-t border-[#E5E0D5]/70 pt-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-left">
                 <div>
@@ -1987,6 +2103,11 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
                     </div>
                   </div>
                   <h4 className="font-serif font-bold text-[#1B365D] text-sm mt-3">{item.judul}</h4>
+                  {item.imageUrl && (
+                    <div className="w-full h-32 rounded-xl overflow-hidden border border-[#E5E0D5] my-2 bg-slate-50 flex items-center justify-center">
+                      <img src={item.imageUrl} alt={item.judul} className="w-full h-full object-cover" />
+                    </div>
+                  )}
                   <p className="text-[11px] text-gray-500 leading-relaxed mt-1">{item.deskripsi}</p>
 
                   <div className="mt-3 pt-3 border-t border-gray-100 flex flex-wrap gap-2 text-[10px] items-center">

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { HomepageContent, ProgramItem } from '../../types';
-import { Plus, Trash2, Edit2, Save, X, Paperclip, Download, Eye, FileText, Facebook, Instagram, Youtube, Link } from 'lucide-react';
+import { Plus, Trash2, Edit2, Save, X, Paperclip, Download, Eye, FileText, Facebook, Instagram, Youtube, Link, Image as ImageIcon } from 'lucide-react';
+import { compressImage } from '../../utils/storage';
 
 interface ProgramEditorProps {
   content: HomepageContent;
@@ -37,6 +38,7 @@ export default function ProgramEditor({ content, onSave }: ProgramEditorProps) {
   const [newIsHighlighted, setNewIsHighlighted] = useState(false);
   const [newUrutan, setNewUrutan] = useState<number | ''>('');
   const [newFileState, setNewFileState] = useState<{ name: string; type: string; data: string } | null>(null);
+  const [newImageUrl, setNewImageUrl] = useState('');
   const [newLinkFacebook, setNewLinkFacebook] = useState('');
   const [newLinkInstagram, setNewLinkInstagram] = useState('');
   const [newLinkYoutube, setNewLinkYoutube] = useState('');
@@ -48,6 +50,7 @@ export default function ProgramEditor({ content, onSave }: ProgramEditorProps) {
   const [editIsHighlighted, setEditIsHighlighted] = useState(false);
   const [editUrutan, setEditUrutan] = useState<number | ''>('');
   const [editFileState, setEditFileState] = useState<{ name: string; type: string; data: string } | null>(null);
+  const [editImageUrl, setEditImageUrl] = useState('');
   const [editLinkFacebook, setEditLinkFacebook] = useState('');
   const [editLinkInstagram, setEditLinkInstagram] = useState('');
   const [editLinkYoutube, setEditLinkYoutube] = useState('');
@@ -109,7 +112,8 @@ export default function ProgramEditor({ content, onSave }: ProgramEditorProps) {
       fileData: newFileState?.data,
       linkFacebook: newLinkFacebook.trim() || undefined,
       linkInstagram: newLinkInstagram.trim() || undefined,
-      linkYoutube: newLinkYoutube.trim() || undefined
+      linkYoutube: newLinkYoutube.trim() || undefined,
+      imageUrl: newImageUrl || undefined
     };
 
     const updatedList = [...items, newItem].sort((a, b) => a.urutan - b.urutan);
@@ -123,6 +127,7 @@ export default function ProgramEditor({ content, onSave }: ProgramEditorProps) {
     setNewIsHighlighted(false);
     setNewUrutan('');
     setNewFileState(null);
+    setNewImageUrl('');
     setNewLinkFacebook('');
     setNewLinkInstagram('');
     setNewLinkYoutube('');
@@ -139,6 +144,7 @@ export default function ProgramEditor({ content, onSave }: ProgramEditorProps) {
     setEditLinkFacebook(item.linkFacebook || '');
     setEditLinkInstagram(item.linkInstagram || '');
     setEditLinkYoutube(item.linkYoutube || '');
+    setEditImageUrl(item.imageUrl || '');
     if (item.fileName && item.fileData) {
       setEditFileState({
         name: item.fileName,
@@ -168,7 +174,8 @@ const handleSaveEdit = async (e: React.FormEvent) => {
           fileData: editFileState?.data,
           linkFacebook: editLinkFacebook.trim() || undefined,
           linkInstagram: editLinkInstagram.trim() || undefined,
-          linkYoutube: editLinkYoutube.trim() || undefined
+          linkYoutube: editLinkYoutube.trim() || undefined,
+          imageUrl: editImageUrl || undefined
         };
       }
       return item;
@@ -178,6 +185,7 @@ const handleSaveEdit = async (e: React.FormEvent) => {
     onSave({ ...content, programList: updatedList }, 'edit');
     setEditingId(null);
     setEditFileState(null);
+    setEditImageUrl('');
     setEditLinkFacebook('');
     setEditLinkInstagram('');
     setEditLinkYoutube('');
@@ -314,6 +322,55 @@ const handleSaveEdit = async (e: React.FormEvent) => {
                   </div>
                 ) : (
                   <span className="text-[10px] text-gray-500 italic">Maksimal 5MB. Dokumen ini dapat diunduh atau dipreview langsung oleh anggota.</span>
+                )}
+              </div>
+            </div>
+
+            <div className="md:col-span-2 border-t border-gray-100 pt-3">
+              <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">Upload/Unggah Foto Utama Program Kerja (Opsional)</label>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-1.5">
+                <input
+                  type="file"
+                  id="new-program-photo"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      compressImage(file)
+                        .then(base64 => setNewImageUrl(base64))
+                        .catch(err => {
+                          console.error("Error compressing program image:", err);
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            setNewImageUrl(event.target?.result as string);
+                          };
+                          reader.readAsDataURL(file);
+                        });
+                    }
+                  }}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="new-program-photo"
+                  className="px-3 py-1.5 bg-gray-150 hover:bg-gray-250 text-gray-700 rounded-lg text-xs font-semibold cursor-pointer border border-gray-300 flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Pilih Foto / Gambar
+                </label>
+                {newImageUrl ? (
+                  <div className="flex items-center gap-3">
+                    <div className="w-16 h-10 rounded overflow-hidden border border-gray-300 bg-slate-50">
+                      <img src={newImageUrl} className="w-full h-full object-cover" alt="Preview Program Kerja Baru" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setNewImageUrl('')}
+                      className="text-xs text-red-650 hover:text-red-750 font-bold hover:underline"
+                    >
+                      Batal Unggah
+                    </button>
+                  </div>
+                ) : (
+                  <span className="text-[10px] text-gray-500 italic">Gambar preview landscape representatif.</span>
                 )}
               </div>
             </div>
@@ -468,6 +525,55 @@ const handleSaveEdit = async (e: React.FormEvent) => {
               </div>
             </div>
 
+            <div className="md:col-span-2 border-t border-gray-100 pt-3">
+              <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">Ganti Foto Utama Program Kerja</label>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-1.5">
+                <input
+                  type="file"
+                  id="edit-program-photo"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      compressImage(file)
+                        .then(base64 => setEditImageUrl(base64))
+                        .catch(err => {
+                          console.error("Error compressing program edit image:", err);
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            setEditImageUrl(event.target?.result as string);
+                          };
+                          reader.readAsDataURL(file);
+                        });
+                    }
+                  }}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="edit-program-photo"
+                  className="px-3 py-1.5 bg-gray-150 hover:bg-gray-250 text-gray-700 rounded-lg text-xs font-semibold cursor-pointer border border-gray-300 flex items-center gap-1.5"
+                >
+                  <ImageIcon className="w-3.5 h-3.5" /> Ganti / Pilih Foto Baru
+                </label>
+                {editImageUrl ? (
+                  <div className="flex items-center gap-3">
+                    <div className="w-16 h-10 rounded overflow-hidden border border-gray-300 bg-slate-50">
+                      <img src={editImageUrl} className="w-full h-full object-cover" alt="Preview Program Kerja Edit" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setEditImageUrl('')}
+                      className="text-xs text-red-650 hover:text-red-750 font-bold hover:underline"
+                    >
+                      Hapus Foto
+                    </button>
+                  </div>
+                ) : (
+                  <span className="text-[10px] text-gray-500 italic">Foto utama kosong atau belum dipilih.</span>
+                )}
+              </div>
+            </div>
+
             {/* TAUTAN MEDIA SOSIAL EDIT */}
             <div className="md:col-span-2 border-t border-gray-100 pt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
@@ -544,6 +650,11 @@ const handleSaveEdit = async (e: React.FormEvent) => {
               <h4 className={`text-sm font-serif font-bold ${item.isHighlighted ? 'text-[#C5A059]' : 'text-[#1B365D]'}`}>
                 {item.judul}
               </h4>
+              {item.imageUrl && (
+                <div className="w-full h-32 rounded-lg overflow-hidden border border-[#E5E0D5] my-2 bg-slate-100 flex items-center justify-center">
+                  <img src={item.imageUrl} alt={item.judul} className="w-full h-full object-cover" />
+                </div>
+              )}
               <p className={`text-xs leading-relaxed ${item.isHighlighted ? 'text-slate-300' : 'text-gray-600'}`}>
                 {item.deskripsi}
               </p>

@@ -1778,7 +1778,7 @@ export default function App() {
 
       {/* FLOATING WHATSAPP BUTTON FOR SENIOR PORTAL ACCESSIBILITY */}
       <a
-        href="https://api.whatsapp.com/send?phone=081803100222&text=Halo%20Sekretaris%20IPPI,%20saya%20memerlukan%20bantuan%20atau%20informasi%20mengenai%20pendaftaran%20anggota."
+        href="https://api.whatsapp.com/send?phone=6281803100222&text=Halo%20Sekretaris%20IPPI,%20saya%20memerlukan%20bantuan%20atau%20informasi%20mengenai%20pendaftaran%20anggota."
         target="_blank"
         rel="noreferrer"
         className="fixed bottom-6 right-6 bg-[#25D366] hover:bg-[#128C7E] text-white px-5 py-3.5 rounded-full shadow-2xl flex items-center space-x-2 hover:scale-105 transition-transform z-40 font-bold text-xs shrink-0 cursor-pointer border border-emerald-400"
