@@ -82,6 +82,70 @@ export default function App() {
   const [journalSlideIndex, setJournalSlideIndex] = useState(0);
   const [strukturSlideIndex, setStrukturSlideIndex] = useState(0);
 
+  // Prevent index out of bounds when items are updated, added, or deleted from admin/secretary panel
+  useEffect(() => {
+    const totalHomeKeg = getHomepageKegiatanList().length;
+    if (homeKegiatanSlideIndex > 0 && homeKegiatanSlideIndex >= totalHomeKeg) {
+      setHomeKegiatanSlideIndex(0);
+    } else if (homeKegiatanSlideIndex > 0 && totalHomeKeg > 2 && homeKegiatanSlideIndex > totalHomeKeg - 2) {
+      setHomeKegiatanSlideIndex(totalHomeKeg - 2);
+    }
+  }, [homeContent?.kegiatan, homeKegiatanSlideIndex]);
+
+  useEffect(() => {
+    const totalGallery = (homeContent?.kegiatan || []).length;
+    if (gallerySlideIndex > 0 && gallerySlideIndex >= totalGallery) {
+      setGallerySlideIndex(0);
+    } else if (gallerySlideIndex > 0 && totalGallery > 2 && gallerySlideIndex > totalGallery - 2) {
+      setGallerySlideIndex(totalGallery - 2);
+    }
+  }, [homeContent?.kegiatan, gallerySlideIndex]);
+
+  useEffect(() => {
+    const totalStruktur = (homeContent?.strukturList || []).length;
+    if (strukturSlideIndex > 0 && strukturSlideIndex >= totalStruktur) {
+      setStrukturSlideIndex(0);
+    } else if (strukturSlideIndex > 0 && totalStruktur > 4 && strukturSlideIndex > totalStruktur - 4) {
+      setStrukturSlideIndex(totalStruktur - 4);
+    }
+  }, [homeContent?.strukturList, strukturSlideIndex]);
+
+  useEffect(() => {
+    const totalAbout = (homeContent?.aboutItems || []).length;
+    if (aboutSlideIndex > 0 && aboutSlideIndex >= totalAbout) {
+      setAboutSlideIndex(0);
+    } else if (aboutSlideIndex > 0 && totalAbout > 4 && aboutSlideIndex > totalAbout - 4) {
+      setAboutSlideIndex(totalAbout - 4);
+    }
+  }, [homeContent?.aboutItems, aboutSlideIndex]);
+
+  useEffect(() => {
+    const totalProgram = (homeContent?.programList || []).length;
+    if (programSlideIndex > 0 && programSlideIndex >= totalProgram) {
+      setProgramSlideIndex(0);
+    } else if (programSlideIndex > 0 && totalProgram > 3 && programSlideIndex > totalProgram - 3) {
+      setProgramSlideIndex(totalProgram - 3);
+    }
+  }, [homeContent?.programList, programSlideIndex]);
+
+  useEffect(() => {
+    const totalNews = (homeContent?.beritaList || []).length;
+    if (newsSlideIndex > 0 && newsSlideIndex >= totalNews) {
+      setNewsSlideIndex(0);
+    } else if (newsSlideIndex > 0 && totalNews > 3 && newsSlideIndex > totalNews - 3) {
+      setNewsSlideIndex(totalNews - 3);
+    }
+  }, [homeContent?.beritaList, newsSlideIndex]);
+
+  useEffect(() => {
+    const totalJournal = (homeContent?.jurnalList || []).length;
+    if (journalSlideIndex > 0 && journalSlideIndex >= totalJournal) {
+      setJournalSlideIndex(0);
+    } else if (journalSlideIndex > 0 && totalJournal > 2 && journalSlideIndex > totalJournal - 2) {
+      setJournalSlideIndex(totalJournal - 2);
+    }
+  }, [homeContent?.jurnalList, journalSlideIndex]);
+
   // Trigger modals
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);

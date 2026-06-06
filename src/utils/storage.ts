@@ -899,33 +899,68 @@ export function getStoredContent(): HomepageContent {
 }
 
 export async function saveStoredContent(content: HomepageContent): Promise<void> {
+  const previousContent = cachedContent || getStoredContent();
   cachedContent = content;
   // First update LocalStorage
   localStorage.setItem('ippi_content', JSON.stringify(content));
 
-  try {
-    const promises = [
-      // 1. Save main info metadata
-      setDoc(doc(db, 'content', 'main'), sanitizeFirestoreData({
-        heroTitle: content.heroTitle || INITIAL_CONTENT.heroTitle,
-        heroSub: content.heroSub || INITIAL_CONTENT.heroSub,
-        heroText: content.heroText || INITIAL_CONTENT.heroText,
-        visiMisi: content.visiMisi || INITIAL_CONTENT.visiMisi,
-        mengapaBergabung: content.mengapaBergabung || INITIAL_CONTENT.mengapaBergabung,
-      })),
-      // 2. Save individual lists to separate specialized documents for sub-1MB guarantees
-      setDoc(doc(db, 'content', 'about_items'), sanitizeFirestoreData({ list: content.aboutItems || [] })),
-      setDoc(doc(db, 'content', 'program_kerja'), sanitizeFirestoreData({ list: content.programList || [] })),
-      setDoc(doc(db, 'content', 'galeri_kegiatan'), sanitizeFirestoreData({ list: content.kegiatan || [] })),
-      setDoc(doc(db, 'content', 'berita'), sanitizeFirestoreData({ list: content.beritaList || [] })),
-      setDoc(doc(db, 'content', 'jurnal_list'), sanitizeFirestoreData({ list: content.jurnalList || [] })),
-      setDoc(doc(db, 'content', 'struktur_list'), sanitizeFirestoreData({ list: content.strukturList || [] })),
-      setDoc(doc(db, 'content', 'fokus_kontribusi'), sanitizeFirestoreData({ list: content.fokusList || [] })),
-      setDoc(doc(db, 'content', 'umkm_list'), sanitizeFirestoreData({ list: content.umkmList || [] }))
-    ];
+  // Dispatch event immediately so any listening UI components re-render instantly without waiting for Firestore
+  window.dispatchEvent(new Event('ippi_storage_updated'));
 
-    await Promise.all(promises);
-    window.dispatchEvent(new Event('ippi_storage_updated'));
+  try {
+    const promises: Promise<any>[] = [];
+
+    // 1. Check main info fields
+    const mainChanged = !previousContent ||
+      previousContent.heroTitle !== content.heroTitle ||
+      previousContent.heroSub !== content.heroSub ||
+      previousContent.heroText !== content.heroText ||
+      previousContent.visiMisi !== content.visiMisi ||
+      JSON.stringify(previousContent.mengapaBergabung) !== JSON.stringify(content.mengapaBergabung);
+
+    if (mainChanged) {
+      promises.push(
+        setDoc(doc(db, 'content', 'main'), sanitizeFirestoreData({
+          heroTitle: content.heroTitle || INITIAL_CONTENT.heroTitle,
+          heroSub: content.heroSub || INITIAL_CONTENT.heroSub,
+          heroText: content.heroText || INITIAL_CONTENT.heroText,
+          visiMisi: content.visiMisi || INITIAL_CONTENT.visiMisi,
+          mengapaBergabung: content.mengapaBergabung || INITIAL_CONTENT.mengapaBergabung,
+        }))
+      );
+    }
+
+    // 2. Check individual lists and save only if modified
+    if (!previousContent || JSON.stringify(previousContent.aboutItems || []) !== JSON.stringify(content.aboutItems || [])) {
+      promises.push(setDoc(doc(db, 'content', 'about_items'), sanitizeFirestoreData({ list: content.aboutItems || [] })));
+    }
+    if (!previousContent || JSON.stringify(previousContent.programList || []) !== JSON.stringify(content.programList || [])) {
+      promises.push(setDoc(doc(db, 'content', 'program_kerja'), sanitizeFirestoreData({ list: content.programList || [] })));
+    }
+    if (!previousContent || JSON.stringify(previousContent.kegiatan || []) !== JSON.stringify(content.kegiatan || [])) {
+      promises.push(setDoc(doc(db, 'content', 'galeri_kegiatan'), sanitizeFirestoreData({ list: content.kegiatan || [] })));
+    }
+    if (!previousContent || JSON.stringify(previousContent.beritaList || []) !== JSON.stringify(content.beritaList || [])) {
+      promises.push(setDoc(doc(db, 'content', 'berita'), sanitizeFirestoreData({ list: content.beritaList || [] })));
+    }
+    if (!previousContent || JSON.stringify(previousContent.jurnalList || []) !== JSON.stringify(content.jurnalList || [])) {
+      promises.push(setDoc(doc(db, 'content', 'jurnal_list'), sanitizeFirestoreData({ list: content.jurnalList || [] })));
+    }
+    if (!previousContent || JSON.stringify(previousContent.strukturList || []) !== JSON.stringify(content.strukturList || [])) {
+      promises.push(setDoc(doc(db, 'content', 'struktur_list'), sanitizeFirestoreData({ list: content.strukturList || [] })));
+    }
+    if (!previousContent || JSON.stringify(previousContent.fokusList || []) !== JSON.stringify(content.fokusList || [])) {
+      promises.push(setDoc(doc(db, 'content', 'fokus_kontribusi'), sanitizeFirestoreData({ list: content.fokusList || [] })));
+    }
+    if (!previousContent || JSON.stringify(previousContent.umkmList || []) !== JSON.stringify(content.umkmList || [])) {
+      promises.push(setDoc(doc(db, 'content', 'umkm_list'), sanitizeFirestoreData({ list: content.umkmList || [] })));
+    }
+
+    if (promises.length > 0) {
+      await Promise.all(promises);
+      // Dispatch again on success to ensure parity
+      window.dispatchEvent(new Event('ippi_storage_updated'));
+    }
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, 'content_all');
   }
