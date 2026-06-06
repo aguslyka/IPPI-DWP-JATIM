@@ -68,6 +68,12 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
   const [editKegJudul, setEditKegJudul] = useState('');
   const [editKegDesc, setEditKegDesc] = useState('');
 
+  // Best/Featured & Order states for Gallery Items
+  const [newKegIsBest, setNewKegIsBest] = useState(false);
+  const [newKegUrutan, setNewKegUrutan] = useState<number | ''>('');
+  const [editKegIsBest, setEditKegIsBest] = useState(false);
+  const [editKegUrutan, setEditKegUrutan] = useState<number | ''>('');
+
   // SESSIONS COMPANION STATES FOR DOCUMENTS & SOCIAL PROFILES - SECRETARY
   const [previewSecFile, setPreviewSecFile] = useState<{ name: string; type: string; data: string } | null>(null);
 
@@ -280,7 +286,10 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
       // Social Web links
       linkFacebook: newKegLinkFacebook.trim() || undefined,
       linkInstagram: newKegLinkInstagram.trim() || undefined,
-      linkYoutube: newKegLinkYoutube.trim() || undefined
+      linkYoutube: newKegLinkYoutube.trim() || undefined,
+      // Best / Featured and Order
+      isBest: newKegIsBest,
+      urutan: typeof newKegUrutan === 'number' ? newKegUrutan : undefined
     };
     const updated = {
       ...content,
@@ -301,6 +310,8 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
     setNewKegLinkFacebook('');
     setNewKegLinkInstagram('');
     setNewKegLinkYoutube('');
+    setNewKegIsBest(false);
+    setNewKegUrutan('');
     setIsAddKegOpen(false);
     setFeedback('Sukses: Media kegiatan baru berhasil ditambahkan!');
     setTimeout(() => setFeedback(null), 4000);
@@ -318,6 +329,8 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
     setEditKegLinkFacebook(keg.linkFacebook || '');
     setEditKegLinkInstagram(keg.linkInstagram || '');
     setEditKegLinkYoutube(keg.linkYoutube || '');
+    setEditKegIsBest(!!keg.isBest);
+    setEditKegUrutan(typeof keg.urutan === 'number' ? keg.urutan : '');
   };
 
   const handleSaveEditKeg = () => {
@@ -352,7 +365,10 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
           // Update social
           linkFacebook: editKegLinkFacebook.trim() || undefined,
           linkInstagram: editKegLinkInstagram.trim() || undefined,
-          linkYoutube: editKegLinkYoutube.trim() || undefined
+          linkYoutube: editKegLinkYoutube.trim() || undefined,
+          // Best / Featured and Order
+          isBest: editKegIsBest,
+          urutan: typeof editKegUrutan === 'number' ? editKegUrutan : undefined
         };
       }
       return k;
@@ -905,8 +921,38 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
                         type="date"
                         value={newKegTanggal}
                         onChange={(e) => setNewKegTanggal(e.target.value)}
-                        className="w-full bg-white border border-[#E5E0D5] rounded-lg px-3 py-2 text-xs"
+                        className="w-full bg-white border border-[#E5E0D5] rounded-lg px-3 py-2 text-xs mb-3"
                       />
+                    </div>
+                    <div className="bg-[#1B365D]/5 p-3 rounded-xl border border-[#1B365D]/10 space-y-2.5">
+                      <div className="flex items-center space-x-2.5">
+                        <input
+                          id="newKegIsBest"
+                          type="checkbox"
+                          checked={newKegIsBest}
+                          onChange={(e) => setNewKegIsBest(e.target.checked)}
+                          className="w-4 h-4 text-[#1B365D] focus:ring-[#1B365D] border-gray-300 rounded cursor-pointer"
+                        />
+                        <label htmlFor="newKegIsBest" className="text-[11px] font-bold text-[#1B365D] uppercase cursor-pointer select-none">
+                          ⭐ Tampilkan di Beranda
+                        </label>
+                      </div>
+                      
+                      {newKegIsBest && (
+                        <div>
+                          <label className="block text-[9px] font-bold text-[#8B7E66] uppercase mb-1">
+                            Urutan Tampil (Misal: 1 paling atas)
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="Contoh: 1, 2, 3"
+                            value={newKegUrutan}
+                            onChange={(e) => setNewKegUrutan(e.target.value === '' ? '' : Number(e.target.value))}
+                            className="w-full bg-white border border-[#E5E0D5] rounded-lg px-3 py-1.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                          />
+                        </div>
+                      )}
                     </div>
                     {newKegIsVideo ? (
                       <div>
@@ -1095,8 +1141,38 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
                         type="date"
                         value={editKegTanggal}
                         onChange={(e) => setEditKegTanggal(e.target.value)}
-                        className="w-full bg-white border border-[#E5E0D5] rounded-lg px-3 py-2 text-xs"
+                        className="w-full bg-white border border-[#E5E0D5] rounded-lg px-3 py-2 text-xs mb-3"
                       />
+                    </div>
+                    <div className="bg-[#1B365D]/5 p-3 rounded-xl border border-[#1B365D]/10 space-y-2.5">
+                      <div className="flex items-center space-x-2.5">
+                        <input
+                          id="editKegIsBest"
+                          type="checkbox"
+                          checked={editKegIsBest}
+                          onChange={(e) => setEditKegIsBest(e.target.checked)}
+                          className="w-4 h-4 text-[#1B365D] focus:ring-[#1B365D] border-gray-300 rounded cursor-pointer"
+                        />
+                        <label htmlFor="editKegIsBest" className="text-[11px] font-bold text-[#1B365D] uppercase cursor-pointer select-none">
+                          ⭐ Tampilkan di Beranda
+                        </label>
+                      </div>
+                      
+                      {editKegIsBest && (
+                        <div>
+                          <label className="block text-[9px] font-bold text-[#8B7E66] uppercase mb-1">
+                            Urutan Tampil (Misal: 1 paling atas)
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="Contoh: 1, 2, 3"
+                            value={editKegUrutan}
+                            onChange={(e) => setEditKegUrutan(e.target.value === '' ? '' : Number(e.target.value))}
+                            className="w-full bg-white border border-[#E5E0D5] rounded-lg px-3 py-1.5 text-xs focus:ring-1 focus:ring-[#1B365D]"
+                          />
+                        </div>
+                      )}
                     </div>
                     {editKegIsVideo ? (
                       <div>
@@ -1242,7 +1318,14 @@ export default function SecretaryPanel({ config, onContentChange, onConfigChange
                   </div>
                   <div className="flex-1 min-w-0">
                     <h5 className="text-[11px] font-bold text-[#1B365D] truncate">{keg.judul}</h5>
-                    <p className="text-[9px] text-gray-400 truncate">{keg.tanggal || 'No date'}</p>
+                    <div className="flex items-center space-x-1.5 mt-0.5 min-w-0">
+                      <p className="text-[9px] text-gray-400 truncate shrink-0">{keg.tanggal || 'No date'}</p>
+                      {keg.isBest && (
+                        <span className="bg-amber-100 border border-amber-200 text-amber-800 text-[8px] font-extrabold px-1 py-0.2 rounded shrink-0">
+                          ⭐ Terbaik {keg.urutan !== undefined ? `#${keg.urutan}` : ''}
+                        </span>
+                      )}
+                    </div>
 
                     {/* Lampiran files and social preview row for Secretary */}
                     <div className="mt-1.5 flex flex-wrap gap-2 text-[10px] items-center">

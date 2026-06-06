@@ -202,6 +202,8 @@ export interface ActivityPhoto {
   linkFacebook?: string;
   linkInstagram?: string;
   linkYoutube?: string;
+  isBest?: boolean;
+  urutan?: number;
 }
 
 export interface StructureItem {

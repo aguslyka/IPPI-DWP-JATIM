@@ -268,6 +268,19 @@ export default function App() {
     }
   ];
 
+  // Filter & prioritize gallery items (isBest & urutan) for Beranda display
+  const getHomepageKegiatanList = () => {
+    const allKeg = homeContent?.kegiatan || [];
+    const bestKeg = allKeg.filter(k => k.isBest);
+    bestKeg.sort((a, b) => {
+      const orderA = typeof a.urutan === 'number' ? a.urutan : 999999;
+      const orderB = typeof b.urutan === 'number' ? b.urutan : 999999;
+      return orderA - orderB;
+    });
+    return bestKeg.length > 0 ? bestKeg : allKeg;
+  };
+  const scopedHomepageKegiatan = getHomepageKegiatanList();
+
   return (
     <div 
       className="min-h-screen bg-[#FDFCF8] text-[#2D2D2D] font-sans flex flex-col selection:bg-[#C5A059] selection:text-white transition-all overflow-x-hidden"
@@ -576,41 +589,41 @@ export default function App() {
 
                 {/* GALERI KEGIATAN BERANDA */}
                 <div className="space-y-6 pt-4">
-                  <div className="flex items-center justify-between border-b border-[#E5E0D5] pb-3 text-left">
-                    <div>
-                      <span className="text-[9px] uppercase tracking-widest text-[#8B7E66] font-extrabold block">Dokumentasi Aktual</span>
-                      <h3 className="text-3xl font-serif text-[#1B365D] font-bold mt-1">Galeri Kegiatan Cabang IPPI</h3>
-                    </div>
+                      <div className="flex items-center justify-between border-b border-[#E5E0D5] pb-3 text-left">
+                        <div>
+                          <span className="text-[9px] uppercase tracking-widest text-[#8B7E66] font-extrabold block">Dokumentasi Aktual</span>
+                          <h3 className="text-3xl font-serif text-[#1B365D] font-bold mt-1">Galeri Kegiatan Cabang IPPI</h3>
+                        </div>
 
-                    {/* Slide Buttons */}
-                    {(homeContent.kegiatan || []).length > 2 && (
-                      <div className="flex items-center space-x-2 shrink-0">
-                        <span className="text-[10px] text-[#8B7E66] font-bold font-mono">
-                          {homeKegiatanSlideIndex + 1} - {Math.min(homeKegiatanSlideIndex + 2, (homeContent.kegiatan || []).length)} dari {(homeContent.kegiatan || []).length}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setHomeKegiatanSlideIndex(prev => Math.max(0, prev - 1))}
-                          disabled={homeKegiatanSlideIndex === 0}
-                          className="p-1 rounded-full border border-[#E5E0D5] bg-white text-[#1B365D] hover:bg-gray-100 disabled:opacity-30 cursor-pointer shadow-xs"
-                        >
-                          <ChevronLeft className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setHomeKegiatanSlideIndex(prev => Math.min((homeContent.kegiatan || []).length - 2, prev + 1))}
-                          disabled={homeKegiatanSlideIndex >= (homeContent.kegiatan || []).length - 2}
-                          className="p-1 rounded-full border border-[#E5E0D5] bg-white text-[#1B365D] hover:bg-gray-100 disabled:opacity-30 cursor-pointer shadow-xs"
-                        >
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
+                        {/* Slide Buttons */}
+                        {scopedHomepageKegiatan.length > 2 && (
+                          <div className="flex items-center space-x-2 shrink-0">
+                            <span className="text-[10px] text-[#8B7E66] font-bold font-mono">
+                              {homeKegiatanSlideIndex + 1} - {Math.min(homeKegiatanSlideIndex + 2, scopedHomepageKegiatan.length)} dari {scopedHomepageKegiatan.length}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setHomeKegiatanSlideIndex(prev => Math.max(0, prev - 1))}
+                              disabled={homeKegiatanSlideIndex === 0}
+                              className="p-1 rounded-full border border-[#E5E0D5] bg-white text-[#1B365D] hover:bg-gray-100 disabled:opacity-30 cursor-pointer shadow-xs"
+                            >
+                              <ChevronLeft className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setHomeKegiatanSlideIndex(prev => Math.min(scopedHomepageKegiatan.length - 2, prev + 1))}
+                              disabled={homeKegiatanSlideIndex >= scopedHomepageKegiatan.length - 2}
+                              className="p-1 rounded-full border border-[#E5E0D5] bg-white text-[#1B365D] hover:bg-gray-100 disabled:opacity-30 cursor-pointer shadow-xs"
+                            >
+                              <ChevronRight className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
 
-                  {homeContent.kegiatan && homeContent.kegiatan.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      {(homeContent.kegiatan || []).slice(homeKegiatanSlideIndex, homeKegiatanSlideIndex + 2).map((keg) => (
+                      {scopedHomepageKegiatan.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          {scopedHomepageKegiatan.slice(homeKegiatanSlideIndex, homeKegiatanSlideIndex + 2).map((keg) => (
                         <div key={keg.id} className="bg-white border border-[#E5E0D5] rounded-3xl p-5 text-left space-y-4 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
                           <div className="aspect-video w-full bg-[#1B365D]/5 rounded-2xl overflow-hidden relative border border-[#E5E0D5]">
                             {keg.isVideo ? (
@@ -700,6 +713,7 @@ export default function App() {
                       <p className="text-[10px] text-[#8B7E66] mt-1">Gunakan akses admin/sekretaris untuk mempublikasikan foto kegiatan terbaru.</p>
                     </div>
                   )}
+                </div>
 
                   {/* STRUKTUR ORGANISASI CABANG */}
                   <div className="space-y-6 pt-4 text-left">
@@ -762,7 +776,6 @@ export default function App() {
                     {/* Aesthetic divider line */}
                     <div className="border-t border-[#E5E0D5]/50 pt-4" />
                   </div>
-                </div>
 
                 {/* QUICK LATEST PROGRAM SHOWCASE */}
 
