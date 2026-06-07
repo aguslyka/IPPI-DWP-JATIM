@@ -26,6 +26,7 @@ export default function JurnalEditor({ content, onSave }: JurnalEditorProps) {
   const [newLinkFacebook, setNewLinkFacebook] = useState('');
   const [newLinkInstagram, setNewLinkInstagram] = useState('');
   const [newLinkYoutube, setNewLinkYoutube] = useState('');
+  const [newUrutan, setNewUrutan] = useState<number | ''>('');
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editJudul, setEditJudul] = useState('');
@@ -37,6 +38,7 @@ export default function JurnalEditor({ content, onSave }: JurnalEditorProps) {
   const [editLinkFacebook, setEditLinkFacebook] = useState('');
   const [editLinkInstagram, setEditLinkInstagram] = useState('');
   const [editLinkYoutube, setEditLinkYoutube] = useState('');
+  const [editUrutan, setEditUrutan] = useState<number | ''>('');
 
   const [previewFile, setPreviewFile] = useState<{ name: string; type: string; data: string } | null>(null);
 
@@ -94,10 +96,16 @@ export default function JurnalEditor({ content, onSave }: JurnalEditorProps) {
       linkFacebook: newLinkFacebook.trim() || undefined,
       linkInstagram: newLinkInstagram.trim() || undefined,
       linkYoutube: newLinkYoutube.trim() || undefined,
-      imageUrl: newImageUrl || undefined
+      imageUrl: newImageUrl || undefined,
+      urutan: newUrutan !== '' ? Number(newUrutan) : undefined
     };
 
-    const updatedList = [newItem, ...items];
+    const updatedList = [newItem, ...items].sort((a, b) => {
+      const urutanA = a.urutan !== undefined ? Number(a.urutan) : 999999;
+      const urutanB = b.urutan !== undefined ? Number(b.urutan) : 999999;
+      return urutanA - urutanB;
+    });
+
     setItems(updatedList);
     // berhasil ditambah
     onSave({ ...content, jurnalList: updatedList }, 'add');
@@ -112,6 +120,7 @@ export default function JurnalEditor({ content, onSave }: JurnalEditorProps) {
     setNewLinkFacebook('');
     setNewLinkInstagram('');
     setNewLinkYoutube('');
+    setNewUrutan('');
     setIsAddOpen(false);
   };
 
@@ -125,6 +134,7 @@ export default function JurnalEditor({ content, onSave }: JurnalEditorProps) {
     setEditLinkInstagram(item.linkInstagram || '');
     setEditLinkYoutube(item.linkYoutube || '');
     setEditImageUrl(item.imageUrl || '');
+    setEditUrutan(item.urutan !== undefined ? item.urutan : '');
     if (item.fileName && item.fileData) {
       setEditFileState({
         name: item.fileName,
@@ -154,10 +164,15 @@ export default function JurnalEditor({ content, onSave }: JurnalEditorProps) {
           linkFacebook: editLinkFacebook.trim() || undefined,
           linkInstagram: editLinkInstagram.trim() || undefined,
           linkYoutube: editLinkYoutube.trim() || undefined,
-          imageUrl: editImageUrl || undefined
+          imageUrl: editImageUrl || undefined,
+          urutan: editUrutan !== '' ? Number(editUrutan) : undefined
         };
       }
       return item;
+    }).sort((a, b) => {
+      const urutanA = a.urutan !== undefined ? Number(a.urutan) : 999999;
+      const urutanB = b.urutan !== undefined ? Number(b.urutan) : 999999;
+      return urutanA - urutanB;
     });
 
     setItems(updatedList);
@@ -169,6 +184,7 @@ export default function JurnalEditor({ content, onSave }: JurnalEditorProps) {
     setEditLinkFacebook('');
     setEditLinkInstagram('');
     setEditLinkYoutube('');
+    setEditUrutan('');
   };
 
   const handleDelete = (id: string, judul: string) => {
@@ -239,6 +255,16 @@ export default function JurnalEditor({ content, onSave }: JurnalEditorProps) {
                 value={newSubjek}
                 onChange={(e) => setNewSubjek(e.target.value)}
                 placeholder="Contoh: Audit Publik, Pengawasan Sosial BUMN"
+                className="w-full bg-white border border-[#E5E0D5] rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-[#1B365D]"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-[#1B365D] uppercase mb-1">Nomor Urut Tampilan Jurnal</label>
+              <input
+                type="number"
+                value={newUrutan}
+                onChange={(e) => setNewUrutan(e.target.value === '' ? '' : Number(e.target.value))}
+                placeholder="Contoh: 1, 2, 3..."
                 className="w-full bg-white border border-[#E5E0D5] rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-[#1B365D]"
               />
             </div>
@@ -430,6 +456,16 @@ export default function JurnalEditor({ content, onSave }: JurnalEditorProps) {
                 className="w-full bg-white border border-blue-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-[#1B365D]"
               />
             </div>
+            <div>
+              <label className="block text-[10px] font-bold text-[#1B365D] uppercase mb-1">Nomor Urut Tampilan Jurnal</label>
+              <input
+                type="number"
+                value={editUrutan}
+                onChange={(e) => setEditUrutan(e.target.value === '' ? '' : Number(e.target.value))}
+                placeholder="Contoh: 1, 2, 3..."
+                className="w-full bg-white border border-blue-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-[#1B365D]"
+              />
+            </div>
             <div className="md:col-span-2">
               <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">Abstrak Penelitian *</label>
               <textarea
@@ -580,7 +616,14 @@ export default function JurnalEditor({ content, onSave }: JurnalEditorProps) {
         {items.map((item) => (
           <div key={item.id} className="border border-[#E5E0D5] border-l-4 border-l-[#1B365D] rounded-r-xl p-4 bg-white shadow-xs flex flex-col md:flex-row justify-between items-start gap-4">
             <div className="space-y-2 flex-1 w-full">
-              <span className="text-[10px] text-amber-900 font-mono font-bold block">{item.tanggalPublikasi} (Edisi Cetak &amp; Online)</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] text-amber-900 font-mono font-bold block">{item.tanggalPublikasi} (Edisi Cetak &amp; Online)</span>
+                {item.urutan !== undefined && (
+                  <span className="bg-[#1B365D]/10 text-[#1B365D] font-mono text-[10px] font-bold px-1.5 py-0.5 rounded">
+                    Urutan: {item.urutan}
+                  </span>
+                )}
+              </div>
               <h4 className="text-base font-serif font-bold text-[#1B365D] leading-tight">
                 {item.judul}
               </h4>

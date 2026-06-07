@@ -332,10 +332,10 @@ export default function App() {
     }
   ];
 
-  // Filter & prioritize gallery items (isBest & urutan) for Beranda display
+  // Filter & prioritize gallery items (isBeranda/isBest & urutan) for Beranda display
   const getHomepageKegiatanList = () => {
     const allKeg = homeContent?.kegiatan || [];
-    const bestKeg = allKeg.filter(k => k.isBest);
+    const bestKeg = allKeg.filter(k => k.isBeranda || k.isBest);
     bestKeg.sort((a, b) => {
       const orderA = typeof a.urutan === 'number' ? a.urutan : 999999;
       const orderB = typeof b.urutan === 'number' ? b.urutan : 999999;

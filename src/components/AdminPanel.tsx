@@ -94,8 +94,10 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
   // Best/Featured & Order states for Gallery Items
   const [newKegIsBest, setNewKegIsBest] = useState(false);
   const [newKegUrutan, setNewKegUrutan] = useState<number | ''>('');
+  const [newKegIsBeranda, setNewKegIsBeranda] = useState(false);
   const [editKegIsBest, setEditKegIsBest] = useState(false);
   const [editKegUrutan, setEditKegUrutan] = useState<number | ''>('');
+  const [editKegIsBeranda, setEditKegIsBeranda] = useState(false);
 
   // Organizational Structure states for Admin
   const [isAddStrOpen, setIsAddStrOpen] = useState(false);
@@ -292,11 +294,17 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
       linkInstagram: newKegLinkInstagram.trim() || undefined,
       linkYoutube: newKegLinkYoutube.trim() || undefined,
       isBest: newKegIsBest,
-      urutan: typeof newKegUrutan === 'number' ? newKegUrutan : undefined
+      urutan: typeof newKegUrutan === 'number' ? newKegUrutan : undefined,
+      isBeranda: newKegIsBeranda
     };
+    const updatedKegList = [...currentKeg, newKeg].sort((a, b) => {
+      const urutanA = a.urutan !== undefined ? Number(a.urutan) : 999999;
+      const urutanB = b.urutan !== undefined ? Number(b.urutan) : 999999;
+      return urutanA - urutanB;
+    });
     const updated = {
       ...homeContent,
-      kegiatan: [...currentKeg, newKeg]
+      kegiatan: updatedKegList
     };
     setHomeContent(updated);
     saveStoredContent(updated);
@@ -315,6 +323,7 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
     setNewKegLinkYoutube('');
     setNewKegIsBest(false);
     setNewKegUrutan('');
+    setNewKegIsBeranda(false);
     setIsAddKegOpen(false);
     triggerFeedback('ok', 'Sukses: Media kegiatan baru berhasil ditambahkan!');
   };
@@ -332,6 +341,7 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
     setEditKegLinkYoutube(keg.linkYoutube || '');
     setEditKegIsBest(!!keg.isBest);
     setEditKegUrutan(typeof keg.urutan === 'number' ? keg.urutan : '');
+    setEditKegIsBeranda(!!keg.isBeranda);
     if (keg.fileName && keg.fileData) {
       setEditKegFileState({
         name: keg.fileName,
@@ -375,10 +385,15 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
           linkInstagram: editKegLinkInstagram.trim() || undefined,
           linkYoutube: editKegLinkYoutube.trim() || undefined,
           isBest: editKegIsBest,
-          urutan: typeof editKegUrutan === 'number' ? editKegUrutan : undefined
+          urutan: typeof editKegUrutan === 'number' ? editKegUrutan : undefined,
+          isBeranda: editKegIsBeranda
         };
       }
       return k;
+    }).sort((a, b) => {
+      const urutanA = a.urutan !== undefined ? Number(a.urutan) : 999999;
+      const urutanB = b.urutan !== undefined ? Number(b.urutan) : 999999;
+      return urutanA - urutanB;
     });
     const updated = {
       ...homeContent,
@@ -392,6 +407,7 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
     setEditKegLinkFacebook('');
     setEditKegLinkInstagram('');
     setEditKegLinkYoutube('');
+    setEditKegIsBeranda(false);
     triggerFeedback('ok', 'Sukses: Perubahan media kegiatan berhasil disimpan!');
   };
 
@@ -1509,21 +1525,24 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
                     <div className="bg-[#1B365D]/5 p-3 rounded-xl border border-[#1B365D]/10 space-y-2.5">
                       <div className="flex items-center space-x-2.5">
                         <input
-                          id="newKegIsBest-admin"
+                          id="newKegIsBeranda-admin"
                           type="checkbox"
-                          checked={newKegIsBest}
-                          onChange={(e) => setNewKegIsBest(e.target.checked)}
+                          checked={newKegIsBeranda}
+                          onChange={(e) => {
+                            setNewKegIsBeranda(e.target.checked);
+                            setNewKegIsBest(e.target.checked);
+                          }}
                           className="w-4 h-4 text-[#1B365D] focus:ring-[#1B365D] border-gray-300 rounded cursor-pointer"
                         />
-                        <label htmlFor="newKegIsBest-admin" className="text-[11px] font-bold text-[#1B365D] uppercase cursor-pointer select-none">
-                          ⭐ Tampilkan di Beranda
+                        <label htmlFor="newKegIsBeranda-admin" className="text-[11px] font-bold text-[#1B365D] uppercase cursor-pointer select-none">
+                          🏡 Tampilkan di Beranda
                         </label>
                       </div>
                       
-                      {newKegIsBest && (
+                      {newKegIsBeranda && (
                         <div>
                           <label className="block text-[9px] font-bold text-[#8B7E66] uppercase mb-1">
-                            Urutan Tampil (Misal: 1 paling atas)
+                            Nomor Urut Tampilan (Misal: 1 paling atas)
                           </label>
                           <input
                             type="number"
@@ -1730,21 +1749,24 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
                     <div className="bg-[#1B365D]/5 p-3 rounded-xl border border-[#1B365D]/10 space-y-2.5">
                       <div className="flex items-center space-x-2.5">
                         <input
-                          id="editKegIsBest-admin"
+                          id="editKegIsBeranda-admin"
                           type="checkbox"
-                          checked={editKegIsBest}
-                          onChange={(e) => setEditKegIsBest(e.target.checked)}
+                          checked={editKegIsBeranda}
+                          onChange={(e) => {
+                            setEditKegIsBeranda(e.target.checked);
+                            setEditKegIsBest(e.target.checked);
+                          }}
                           className="w-4 h-4 text-[#1B365D] focus:ring-[#1B365D] border-gray-300 rounded cursor-pointer"
                         />
-                        <label htmlFor="editKegIsBest-admin" className="text-[11px] font-bold text-[#1B365D] uppercase cursor-pointer select-none">
-                          ⭐ Tampilkan di Beranda
+                        <label htmlFor="editKegIsBeranda-admin" className="text-[11px] font-bold text-[#1B365D] uppercase cursor-pointer select-none">
+                          🏡 Tampilkan di Beranda
                         </label>
                       </div>
                       
-                      {editKegIsBest && (
+                      {editKegIsBeranda && (
                         <div>
                           <label className="block text-[9px] font-bold text-[#8B7E66] uppercase mb-1">
-                            Urutan Tampil (Misal: 1 paling atas)
+                            Nomor Urut Tampilan (Misal: 1 paling atas)
                           </label>
                           <input
                             type="number"
@@ -1905,9 +1927,9 @@ export default function AdminPanel({ onConfigChange, onMembersChange, onContentC
                       <h5 className="text-xs font-bold text-[#1B365D] truncate">{keg.judul}</h5>
                       <div className="flex items-center space-x-1.5 mt-0.5 min-w-0">
                         <p className="text-[10px] text-gray-400 truncate shrink-0">{keg.tanggal || 'Belum diatur tanggal'}</p>
-                        {keg.isBest && (
-                          <span className="bg-amber-100 border border-amber-200 text-amber-800 text-[8px] font-extrabold px-1.5 py-0.2 rounded shrink-0">
-                            ⭐ Terbaik {keg.urutan !== undefined ? `#${keg.urutan}` : ''}
+                        {(keg.isBeranda || keg.isBest) && (
+                          <span className="bg-emerald-55 border border-emerald-200 text-emerald-850 text-[8px] font-extrabold px-1.5 py-0.5 rounded shrink-0">
+                            🏡 Beranda {keg.urutan !== undefined ? `#${keg.urutan}` : ''}
                           </span>
                         )}
                       </div>

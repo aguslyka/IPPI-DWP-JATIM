@@ -139,6 +139,10 @@ export interface AboutItem {
   judul: string;
   deskripsi: string;
   urutan: number;
+  isBeranda?: boolean;
+  mediaType?: 'poto' | 'url';
+  imageUrl?: string;
+  mediaUrl?: string;
 }
 
 export interface ProgramItem {
@@ -170,6 +174,8 @@ export interface BeritaItem {
   linkInstagram?: string;
   linkYoutube?: string;
   imageUrl?: string;
+  urutan?: number;
+  isBeranda?: boolean;
 }
 
 export interface JurnalItem {
@@ -185,6 +191,7 @@ export interface JurnalItem {
   linkInstagram?: string;
   linkYoutube?: string;
   imageUrl?: string;
+  urutan?: number;
 }
 
 export interface ActivityPhoto {
@@ -204,6 +211,7 @@ export interface ActivityPhoto {
   linkYoutube?: string;
   isBest?: boolean;
   urutan?: number;
+  isBeranda?: boolean;
 }
 
 export interface StructureItem {

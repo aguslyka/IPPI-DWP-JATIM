@@ -26,6 +26,8 @@ export default function BeritaEditor({ content, onSave }: BeritaEditorProps) {
   const [newLinkFacebook, setNewLinkFacebook] = useState('');
   const [newLinkInstagram, setNewLinkInstagram] = useState('');
   const [newLinkYoutube, setNewLinkYoutube] = useState('');
+  const [newUrutan, setNewUrutan] = useState<number | ''>('');
+  const [newIsBeranda, setNewIsBeranda] = useState(false);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editJudul, setEditJudul] = useState('');
@@ -37,6 +39,8 @@ export default function BeritaEditor({ content, onSave }: BeritaEditorProps) {
   const [editLinkFacebook, setEditLinkFacebook] = useState('');
   const [editLinkInstagram, setEditLinkInstagram] = useState('');
   const [editLinkYoutube, setEditLinkYoutube] = useState('');
+  const [editUrutan, setEditUrutan] = useState<number | ''>('');
+  const [editIsBeranda, setEditIsBeranda] = useState(false);
 
   const [previewFile, setPreviewFile] = useState<{ name: string; type: string; data: string } | null>(null);
 
@@ -94,10 +98,20 @@ export default function BeritaEditor({ content, onSave }: BeritaEditorProps) {
       linkFacebook: newLinkFacebook.trim() || undefined,
       linkInstagram: newLinkInstagram.trim() || undefined,
       linkYoutube: newLinkYoutube.trim() || undefined,
-      imageUrl: newImageUrl || undefined
+      imageUrl: newImageUrl || undefined,
+      urutan: newUrutan !== '' ? Number(newUrutan) : undefined,
+      isBeranda: newIsBeranda
     };
 
-    const updatedList = [newItem, ...items];
+    const updatedList = [newItem, ...items].sort((a, b) => {
+      const urutanA = a.urutan !== undefined ? Number(a.urutan) : 999999;
+      const urutanB = b.urutan !== undefined ? Number(b.urutan) : 999999;
+      if (urutanA !== urutanB) {
+        return urutanA - urutanB;
+      }
+      return new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime();
+    });
+
     setItems(updatedList);
     // berhasil ditambah
     onSave({ ...content, beritaList: updatedList }, 'add');
@@ -112,6 +126,8 @@ export default function BeritaEditor({ content, onSave }: BeritaEditorProps) {
     setNewLinkFacebook('');
     setNewLinkInstagram('');
     setNewLinkYoutube('');
+    setNewUrutan('');
+    setNewIsBeranda(false);
     setIsAddOpen(false);
   };
 
@@ -125,6 +141,8 @@ export default function BeritaEditor({ content, onSave }: BeritaEditorProps) {
     setEditLinkInstagram(item.linkInstagram || '');
     setEditLinkYoutube(item.linkYoutube || '');
     setEditImageUrl(item.imageUrl || '');
+    setEditUrutan(item.urutan !== undefined ? item.urutan : '');
+    setEditIsBeranda(!!item.isBeranda);
     if (item.fileName && item.fileData) {
       setEditFileState({
         name: item.fileName,
@@ -154,10 +172,19 @@ export default function BeritaEditor({ content, onSave }: BeritaEditorProps) {
           linkFacebook: editLinkFacebook.trim() || undefined,
           linkInstagram: editLinkInstagram.trim() || undefined,
           linkYoutube: editLinkYoutube.trim() || undefined,
-          imageUrl: editImageUrl || undefined
+          imageUrl: editImageUrl || undefined,
+          urutan: editUrutan !== '' ? Number(editUrutan) : undefined,
+          isBeranda: editIsBeranda
         };
       }
       return item;
+    }).sort((a, b) => {
+      const urutanA = a.urutan !== undefined ? Number(a.urutan) : 999999;
+      const urutanB = b.urutan !== undefined ? Number(b.urutan) : 999999;
+      if (urutanA !== urutanB) {
+        return urutanA - urutanB;
+      }
+      return new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime();
     });
 
     setItems(updatedList);
@@ -169,6 +196,8 @@ export default function BeritaEditor({ content, onSave }: BeritaEditorProps) {
     setEditLinkFacebook('');
     setEditLinkInstagram('');
     setEditLinkYoutube('');
+    setEditUrutan('');
+    setEditIsBeranda(false);
   };
 
   const handleDelete = (id: string, judul: string) => {
@@ -240,6 +269,28 @@ export default function BeritaEditor({ content, onSave }: BeritaEditorProps) {
                 placeholder="Contoh: Humas IPPI Pusat"
                 className="w-full bg-white border border-[#E5E0D5] rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-[#1B365D]"
               />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-[#1B365D] uppercase mb-1">Nomor Urut Tampilan</label>
+              <input
+                type="number"
+                value={newUrutan}
+                onChange={(e) => setNewUrutan(e.target.value === '' ? '' : Number(e.target.value))}
+                placeholder="Contoh: 1, 2, 3..."
+                className="w-full bg-white border border-[#E5E0D5] rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-[#1B365D]"
+              />
+            </div>
+            <div className="flex items-center space-x-2 pt-4">
+              <input
+                id="newIsBerandaBerita"
+                type="checkbox"
+                checked={newIsBeranda}
+                onChange={(e) => setNewIsBeranda(e.target.checked)}
+                className="w-4 h-4 text-[#1B365D] focus:ring-[#1B365D] border-gray-300 rounded cursor-pointer"
+              />
+              <label htmlFor="newIsBerandaBerita" className="text-[10px] font-bold text-[#1B365D] uppercase cursor-pointer select-none">
+                🏡 Tampilkan di Beranda
+              </label>
             </div>
             <div className="md:col-span-3">
               <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">Isi Singkat / Kutipan Berita *</label>
@@ -429,6 +480,28 @@ export default function BeritaEditor({ content, onSave }: BeritaEditorProps) {
                 className="w-full bg-white border border-blue-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-[#1B365D]"
               />
             </div>
+            <div>
+              <label className="block text-[10px] font-bold text-[#1B365D] uppercase mb-1">Nomor Urut Tampilan</label>
+              <input
+                type="number"
+                value={editUrutan}
+                onChange={(e) => setEditUrutan(e.target.value === '' ? '' : Number(e.target.value))}
+                placeholder="Contoh: 1, 2, 3..."
+                className="w-full bg-white border border-blue-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-[#1B365D]"
+              />
+            </div>
+            <div className="flex items-center space-x-2 pt-4">
+              <input
+                id="editIsBerandaBerita"
+                type="checkbox"
+                checked={editIsBeranda}
+                onChange={(e) => setEditIsBeranda(e.target.checked)}
+                className="w-4 h-4 text-[#1B365D] focus:ring-[#1B365D] border-gray-300 rounded cursor-pointer"
+              />
+              <label htmlFor="editIsBerandaBerita" className="text-[10px] font-bold text-[#1B365D] uppercase cursor-pointer select-none">
+                🏡 Tampilkan di Beranda
+              </label>
+            </div>
             <div className="md:col-span-3">
               <label className="block text-[10px] font-bold text-gray-700 uppercase mb-1">Isi Singkat / Kutipan Berita *</label>
               <textarea
@@ -586,6 +659,22 @@ export default function BeritaEditor({ content, onSave }: BeritaEditorProps) {
                 </span>
                 <span>•</span>
                 <span>Penulis: {item.penulis}</span>
+                {item.urutan !== undefined && (
+                  <>
+                    <span>•</span>
+                    <span className="bg-amber-100 text-[#8B7E66] font-bold px-1.5 py-0.5 rounded">
+                      Urutan: {item.urutan}
+                    </span>
+                  </>
+                )}
+                {item.isBeranda && (
+                  <>
+                    <span>•</span>
+                    <span className="bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">
+                      🏡 Tampil di Beranda
+                    </span>
+                  </>
+                )}
               </div>
               <h4 className="text-base font-serif font-bold text-[#1B365D] leading-tight">
                 {item.judul}
