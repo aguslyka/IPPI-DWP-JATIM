@@ -989,16 +989,6 @@ export default function App() {
                                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                 />
                                 
-                                {/* Category Badge & Beranda Badge status */}
-                                <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start z-10 font-sans">
-                                  <span className="px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-white bg-[#1B365D]/95 backdrop-blur-xs rounded-lg shadow-sm">
-                                    {p.kategori || 'Produk'}
-                                  </span>
-                                  <span className="px-2 py-0.5 text-[8.5px] font-bold uppercase tracking-wider text-white bg-amber-500 rounded-md shadow-xs flex items-center gap-0.5">
-                                    ★ Terpilih di Beranda
-                                  </span>
-                                </div>
-
                                 {/* Video Play Badge (If Youtube exists) */}
                                 {hasVideo && (
                                   <a
