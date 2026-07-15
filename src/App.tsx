@@ -82,6 +82,9 @@ export default function App() {
   const [journalSlideIndex, setJournalSlideIndex] = useState(0);
   const [strukturSlideIndex, setStrukturSlideIndex] = useState(0);
 
+  // Gallery sorting state
+  const [gallerySortMode, setGallerySortMode] = useState<'default' | 'newest' | 'oldest' | 'title'>('default');
+
   // Prevent index out of bounds when items are updated, added, or deleted from admin/secretary panel
   useEffect(() => {
     const totalHomeKeg = getHomepageKegiatanList().length;
@@ -93,13 +96,13 @@ export default function App() {
   }, [homeContent?.kegiatan, homeKegiatanSlideIndex]);
 
   useEffect(() => {
-    const totalGallery = (homeContent?.kegiatan || []).length;
+    const totalGallery = getSortedGalleryItems().length;
     if (gallerySlideIndex > 0 && gallerySlideIndex >= totalGallery) {
       setGallerySlideIndex(0);
     } else if (gallerySlideIndex > 0 && totalGallery > 2 && gallerySlideIndex > totalGallery - 2) {
       setGallerySlideIndex(totalGallery - 2);
     }
-  }, [homeContent?.kegiatan, gallerySlideIndex]);
+  }, [homeContent?.kegiatan, gallerySortMode, gallerySlideIndex]);
 
   useEffect(() => {
     const totalStruktur = (homeContent?.strukturList || []).length;
@@ -344,6 +347,31 @@ export default function App() {
     return bestKeg.length > 0 ? bestKeg : allKeg;
   };
   const scopedHomepageKegiatan = getHomepageKegiatanList();
+
+  // Get sorted gallery items based on user's preference
+  const getSortedGalleryItems = () => {
+    const items = [...(homeContent?.kegiatan || [])];
+    if (gallerySortMode === 'default') {
+      return items.sort((a, b) => {
+        const urutanA = a.urutan !== undefined ? Number(a.urutan) : 999999;
+        const urutanB = b.urutan !== undefined ? Number(b.urutan) : 999999;
+        if (urutanA !== urutanB) {
+          return urutanA - urutanB;
+        }
+        return new Date(b.tanggal || 0).getTime() - new Date(a.tanggal || 0).getTime();
+      });
+    }
+    if (gallerySortMode === 'newest') {
+      return items.sort((a, b) => new Date(b.tanggal || 0).getTime() - new Date(a.tanggal || 0).getTime());
+    }
+    if (gallerySortMode === 'oldest') {
+      return items.sort((a, b) => new Date(a.tanggal || 0).getTime() - new Date(b.tanggal || 0).getTime());
+    }
+    if (gallerySortMode === 'title') {
+      return items.sort((a, b) => (a.judul || '').localeCompare(b.judul || ''));
+    }
+    return items;
+  };
 
   return (
     <div 
@@ -1300,41 +1328,62 @@ export default function App() {
             {/* VIEW 4: GALLERY (GALERI KEGIATAN) */}
             {activeTab === 'GALLERY' && (
               <div className="space-y-8 text-left max-w-4xl mx-auto animate-fade-in">
-                <div className="border-b border-[#E5E0D5] pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="border-b border-[#E5E0D5] pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
                     <span className="text-[10px] uppercase font-bold tracking-widest text-[#C5A059]">JEJAK VISUAL</span>
                     <h2 className="text-3xl font-serif text-[#1B365D] font-bold mt-1">Dokumentasi Galeri Kegiatan IPPI</h2>
                     <p className="text-xs text-[#8B7E66] mt-1">Melihat dari dekat keriangan, kesibukan diskusi, dan persaudaraan sesama anggota.</p>
                   </div>
 
-                  {/* Slide Buttons */}
-                  {(homeContent.kegiatan || []).length > 2 && (
-                    <div className="flex items-center space-x-2 shrink-0">
-                      <span className="text-[10px] text-[#8B7E66] font-bold font-mono">
-                        {gallerySlideIndex + 1} - {Math.min(gallerySlideIndex + 2, (homeContent.kegiatan || []).length)} dari {(homeContent.kegiatan || []).length}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setGallerySlideIndex(prev => Math.max(0, prev - 1))}
-                        disabled={gallerySlideIndex === 0}
-                        className="p-1 rounded-full border border-[#E5E0D5] bg-white text-[#1B365D] hover:bg-gray-100 disabled:opacity-30 cursor-pointer shadow-xs"
+                  <div className="flex flex-wrap items-center gap-3.5 sm:gap-4">
+                    {/* Sort Selector option */}
+                    <div className="flex items-center space-x-2">
+                      <label htmlFor="gallerySort" className="text-[10px] font-bold text-[#1B365D] uppercase tracking-wider shrink-0">Urutkan:</label>
+                      <select
+                        id="gallerySort"
+                        value={gallerySortMode}
+                        onChange={(e) => {
+                          setGallerySortMode(e.target.value as any);
+                          setGallerySlideIndex(0); // Reset sliding view when sorting mode changes
+                        }}
+                        className="bg-white border border-[#E5E0D5] text-xs font-semibold text-[#1B365D] rounded-lg px-2 py-1.5 focus:ring-1 focus:ring-[#1B365D] focus:outline-none cursor-pointer"
                       >
-                        <ChevronLeft className="w-4 h-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setGallerySlideIndex(prev => Math.min((homeContent.kegiatan || []).length - 2, prev + 1))}
-                        disabled={gallerySlideIndex >= (homeContent.kegiatan || []).length - 2}
-                        className="p-1 rounded-full border border-[#E5E0D5] bg-white text-[#1B365D] hover:bg-gray-100 disabled:opacity-30 cursor-pointer shadow-xs"
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
+                        <option value="default">Urutan Nomor Tampil</option>
+                        <option value="newest">Tanggal Terbaru</option>
+                        <option value="oldest">Tanggal Terlama</option>
+                        <option value="title">Judul Kegiatan (A-Z)</option>
+                      </select>
                     </div>
-                  )}
+
+                    {/* Slide Buttons */}
+                    {getSortedGalleryItems().length > 2 && (
+                      <div className="flex items-center space-x-2 shrink-0">
+                        <span className="text-[10px] text-[#8B7E66] font-bold font-mono">
+                          {gallerySlideIndex + 1} - {Math.min(gallerySlideIndex + 2, getSortedGalleryItems().length)} dari {getSortedGalleryItems().length}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setGallerySlideIndex(prev => Math.max(0, prev - 1))}
+                          disabled={gallerySlideIndex === 0}
+                          className="p-1 rounded-full border border-[#E5E0D5] bg-white text-[#1B365D] hover:bg-gray-100 disabled:opacity-30 cursor-pointer shadow-xs"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setGallerySlideIndex(prev => Math.min(getSortedGalleryItems().length - 2, prev + 1))}
+                          disabled={gallerySlideIndex >= getSortedGalleryItems().length - 2}
+                          className="p-1 rounded-full border border-[#E5E0D5] bg-white text-[#1B365D] hover:bg-gray-100 disabled:opacity-30 cursor-pointer shadow-xs"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {(homeContent.kegiatan || []).slice(gallerySlideIndex, gallerySlideIndex + 2).map((item) => (
+                  {getSortedGalleryItems().slice(gallerySlideIndex, gallerySlideIndex + 2).map((item) => (
                     <div key={item.id} className="bg-white border border-[#E5E0D5] rounded-2xl overflow-hidden hover:shadow-md transition-all flex flex-col justify-between">
                       {/* Stylized photo/video placeholder or real uploaded image */}
                       <div className="h-56 bg-gradient-to-br from-[#1B365D] to-[#3B669D] relative overflow-hidden flex items-center justify-center">
@@ -1360,7 +1409,14 @@ export default function App() {
                       
                       <div className="p-5 space-y-2 flex-1 flex flex-col justify-between">
                         <div>
-                          <span className="text-[10px] text-amber-900 font-mono font-semibold block">{item.tanggal || 'Kabar Terbaru'}</span>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] text-amber-900 font-mono font-semibold block">{item.tanggal || 'Kabar Terbaru'}</span>
+                            {item.urutan !== undefined && (
+                              <span className="text-[9px] bg-[#1B365D]/5 text-[#1B365D] font-mono px-2 py-0.5 rounded-full">
+                                Urutan #{item.urutan}
+                              </span>
+                            )}
+                          </div>
                           <h4 className="font-serif font-bold text-[#1B365D] text-base leading-tight mt-1">{item.judul}</h4>
                           <p className="text-xs text-gray-500 leading-relaxed mt-1">{item.deskripsi}</p>
                         </div>
@@ -1420,7 +1476,7 @@ export default function App() {
                       </div>
                     </div>
                   ))}
-                  {(homeContent.kegiatan || []).length === 0 && (
+                  {getSortedGalleryItems().length === 0 && (
                     <div className="text-center py-6 text-gray-400 italic text-xs col-span-2">Belum ada dokumentasi galeri kegiatan terdaftar.</div>
                   )}
                 </div>
